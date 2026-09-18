@@ -24,8 +24,9 @@ backend/
     │   ├── controller/       # REST controllers (thin, delegate to services)
     │   ├── dto/              # Request/response records
     │   ├── enums/            # UserRole, UserStatus, CourseStatus, etc.
+    │   ├── entity/           # JPA entities
     │   ├── exception/        # Custom exceptions + global handler
-    │   ├── model/            # JPA entities
+    │   ├── mapper/           # Entity → DTO mapping (EntityMapper)
     │   ├── repository/       # Spring Data repositories
     │   ├── security/         # JWT filter, SecurityUtils, SecurityConfig
     │   └── service/          # Business logic (interface + impl)
@@ -47,6 +48,7 @@ The architecture is **Controller → Service → Repository**. Controllers stay 
 | POST | `/api/auth/register` | Register (creates STUDENT), returns JWT |
 | POST | `/api/auth/login` | Login, returns JWT |
 | GET | `/api/auth/me` | Authenticated user profile |
+| PUT | `/api/auth/me` | Update own profile (`name`, `email`, `password` — all optional) |
 
 Protected endpoints require the header `Authorization: Bearer <jwt>`.
 
@@ -140,6 +142,69 @@ All errors return a consistent JSON shape from `GlobalExceptionHandler`:
 | `BusinessRuleException` | 400 |
 | `MethodArgumentNotValidException` | 400 |
 
+## Phase 3 — Dashboards & Student Self-Service
+
+### Entities & Relationships
+
+Students interact with the platform through three aggregated views built on top of the Phase 1/2 entities:
+
+- **Gradebook** — merged from `submissions` (graded, `status = GRADED`) and `quiz_attempts` (submitted). Each entry carries `score`, `max`, `type` (`assignment`/`quiz`), `assessment`, `course` and `date`, so the frontend can render rows and compute percentages without extra calls.
+- **Attendance summary** — aggregated from `attendance` records belonging to the student: overall `present`/`total`/`percent`, a per-course breakdown, and a date-descending history feed.
+- **Admin stats** — live platform counts (users by role, courses by status, enrollments, submissions, active users).
+
+### New APIs
+
+| Method | Endpoint | Allowed | Notes |
+|---|---|---|---|
+| PUT | `/api/auth/me` | Authenticated | Update own profile; partial request (`{"name": ...}`, `{"email": ...}`, `{"password": ...}`). Duplicate email → 409. |
+| GET | `/api/admin/stats` | ADMIN | Platform-wide dashboard counts |
+| GET | `/api/students/me/grades` | STUDENT | Gradebook aggregation (graded submissions + submitted quiz attempts), newest first |
+| GET | `/api/students/me/attendance` | STUDENT | Attendance overview (`percent`, `present`, `total`, `courses`, `byCourse[]`, `history[]`) |
+
+`GET /api/admin/stats` response:
+
+```json
+{
+  "totalUsers": 12, "totalStudents": 8, "totalFaculty": 3,
+  "totalCourses": 5, "publishedCourses": 4,
+  "enrollments": 20, "submissions": 15, "submissionsToday": 2, "activeUsers": 11
+}
+```
+
+`GET /api/students/me/grades` response (empty array for a student with no scored assessments):
+
+```json
+[
+  {
+    "assessmentId": 4, "assessment": "Essay", "courseId": 1, "course": "Java Programming",
+    "score": 8.00, "max": 10.00, "type": "assignment", "date": "2026-09-18T16:26:00"
+  },
+  {
+    "assessmentId": 2, "assessment": "Quiz 1", "courseId": 1, "course": "Java Programming",
+    "score": 5.00, "max": 5.00, "type": "quiz", "date": "2026-09-18T16:27:00"
+  }
+]
+```
+
+`GET /api/students/me/attendance` response:
+
+```json
+{
+  "percent": 67, "present": 2, "total": 3, "courses": 1,
+  "byCourse": [ { "courseId": 1, "course": "Java Programming", "present": 2, "total": 3, "percent": 67 } ],
+  "history": [ { "courseId": 1, "course": "Java Programming", "date": "2026-09-18", "status": "ABSENT" } ]
+}
+```
+
+### Security additions
+
+```
+STUDENT:       GET /api/students/me/grades, GET /api/students/me/attendance (added before the
+               broader /api/students/*/attendance matcher so `me` resolves to the caller)
+ADMIN:         GET /api/admin/stats
+AUTHENTICATED: PUT /api/auth/me
+```
+
 ## Running the Application
 
 1. `cd backend`
@@ -177,4 +242,5 @@ mvn test
 
 - `AuthFlowIntegrationTest` — register/login/auth-me flow.
 - `CourseEnrollmentFlowTest` — Phase 2 course authorization + enrollment lifecycle.
+- `DashboardAndProfileFlowTest` — Phase 3: profile update, admin stats, gradebook + attendance aggregation.
 - Repository tests — Course, Enrollment, User, Attendance, LessonProgress, Submission.

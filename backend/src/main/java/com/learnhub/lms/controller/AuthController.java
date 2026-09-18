@@ -1,6 +1,7 @@
 package com.learnhub.lms.controller;
 
 import com.learnhub.lms.dto.request.LoginRequest;
+import com.learnhub.lms.dto.request.ProfileUpdateRequest;
 import com.learnhub.lms.dto.request.RegisterRequest;
 import com.learnhub.lms.dto.response.AuthResponse;
 import com.learnhub.lms.dto.response.UserResponse;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,5 +50,14 @@ public class AuthController {
             throw new BadCredentialsException("Not authenticated.");
         }
         return userService.getUserById(currentUserId);
+    }
+
+    @PutMapping("/me")
+    public UserResponse updateMe(@Valid @RequestBody ProfileUpdateRequest request) {
+        Long currentUserId = SecurityUtils.currentUserId();
+        if (currentUserId == null) {
+            throw new BadCredentialsException("Not authenticated.");
+        }
+        return userService.updateSelf(currentUserId, request);
     }
 }

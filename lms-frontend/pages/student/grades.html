@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grades - LearnHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <script src="../../js/boot.js"></script>
+</head>
+<body data-role="student" data-page="student-grades" data-title="Grades">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <header class="header" id="header"></header>
+  <main class="main" id="main">
+
+    <div class="page-header">
+      <div class="page-title-section">
+        <h1>Grades</h1>
+        <p>Your assessment results across all courses.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-4" id="grades-summary" style="gap:var(--spacing-6);margin-bottom:var(--spacing-6);"></div>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">All assessments</h2>
+        <p class="card-subtitle">Detailed results from the current semester</p>
+      </div>
+      <div class="card-body" style="padding-top:0;padding-bottom:0;">
+        <div class="table-wrapper" style="border:none;border-radius:0;">
+          <table class="table">
+            <thead><tr><th>Assessment</th><th>Course</th><th>Score</th><th>Maximum</th><th>Percentage</th><th>Grade</th><th>Date</th><th>Type</th></tr></thead>
+            <tbody id="grades-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <script src="../../js/pages/student/grades.js"></script>
+</body>
+</html>

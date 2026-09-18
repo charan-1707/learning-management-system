@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard - LearnHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <script src="../../js/boot.js"></script>
+</head>
+<body data-role="student" data-page="student-dashboard" data-title="Dashboard">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <header class="header" id="header"></header>
+  <main class="main" id="main">
+
+    <div id="welcome-banner"></div>
+
+    <div id="stat-grid" class="grid grid-cols-4" style="gap:var(--spacing-6);margin-bottom:var(--spacing-6);"></div>
+
+    <div class="dash-col">
+      <div class="stack">
+
+        <section class="card">
+          <div class="card-header flex items-center justify-between" style="flex-wrap:wrap;gap:12px;">
+            <div>
+              <h2 class="card-title">Continue learning</h2>
+              <p class="card-subtitle">Pick up where you left off</p>
+            </div>
+            <a class="btn btn-sm btn-ghost" href="courses.html">View all courses</a>
+          </div>
+          <div class="card-body" id="continue-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--spacing-6);"></div>
+        </section>
+
+        <div class="dash-col two-two">
+          <section class="card">
+            <div class="card-header flex items-center justify-between">
+              <div>
+                <h2 class="card-title">Upcoming deadlines</h2>
+                <p class="card-subtitle">Assignments and quizzes due soon</p>
+              </div>
+              <a class="btn btn-sm btn-ghost" href="assignments.html">View all</a>
+            </div>
+            <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:var(--spacing-4);" id="upcoming-list"></div>
+          </section>
+
+          <section class="card">
+            <div class="card-header flex items-center justify-between">
+              <div>
+                <h2 class="card-title">Recent grades</h2>
+                <p class="card-subtitle">Your latest assessment results</p>
+              </div>
+              <a class="btn btn-sm btn-ghost" href="grades.html">View all</a>
+            </div>
+            <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:var(--spacing-4);" id="recent-grades"></div>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent activity</h2>
+            <p class="card-subtitle">What's been happening across your courses</p>
+          </div>
+          <div class="card-body" id="activity-list"></div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">Notifications</h2>
+            <p class="card-subtitle">Unread updates</p>
+          </div>
+          <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:var(--spacing-4);" id="mini-notifications"></div>
+          <div class="card-footer" style="text-align:center;">
+            <a class="btn btn-sm btn-ghost" href="notifications.html">View all notifications</a>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">Attendance</h2>
+            <p class="card-subtitle">By course</p>
+          </div>
+          <div class="card-body" id="attendance-mini"></div>
+          <div class="card-footer" style="text-align:center;">
+            <a class="btn btn-sm btn-ghost" href="attendance.html">View attendance</a>
+          </div>
+        </section>
+      </div>
+    </div>
+
+  </main>
+  <script src="../../js/pages/student/dashboard.js"></script>
+</body>
+</html>

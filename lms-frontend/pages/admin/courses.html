@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Courses - LearnHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <script src="../../js/boot.js"></script>
+</head>
+<body data-role="admin" data-page="admin-courses" data-title="Courses">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <header class="header" id="header"></header>
+  <main class="main" id="main">
+
+    <div class="page-header">
+      <div class="page-title-section"><h1>Courses</h1><p>Manage all courses across the platform.</p></div>
+    </div>
+
+    <div class="card" style="padding:var(--spacing-5);margin-bottom:var(--spacing-6);">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+        <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+          <label class="form-label" for="course-search">Search</label>
+          <input type="search" class="form-input" id="course-search" placeholder="Search by name, code or instructor...">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="course-status">Status</label>
+          <select class="form-input form-select" id="course-status">
+            <option value="all">All statuses</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+        <span class="text-sm text-tertiary" style="align-self:end;padding-bottom:4px;" id="course-count"></span>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:0;">
+        <div class="table-wrapper" style="border:none;border-radius:0;">
+          <table class="table">
+            <thead><tr><th>Course</th><th>Code</th><th>Instructor</th><th>Students</th><th>Status</th><th>Category</th><th></th></tr></thead>
+            <tbody id="course-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <script src="../../js/pages/admin/courses.js"></script>
+</body>
+</html>

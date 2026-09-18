@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard - LearnHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <script src="../../js/boot.js"></script>
+</head>
+<body data-role="faculty" data-page="faculty-dashboard" data-title="Dashboard">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <header class="header" id="header"></header>
+  <main class="main" id="main">
+
+    <div id="welcome-banner"></div>
+
+    <div class="grid grid-cols-4" id="stat-grid" style="gap:var(--spacing-6);margin-bottom:var(--spacing-6);"></div>
+
+    <div class="dash-col">
+      <div class="stack">
+
+        <section class="card">
+          <div class="card-header flex items-center justify-between" style="flex-wrap:wrap;gap:12px;">
+            <div><h2 class="card-title">My courses</h2><p class="card-subtitle">Courses you currently teach</p></div>
+            <a class="btn btn-sm btn-primary" href="course-editor.html">+ New course</a>
+          </div>
+          <div class="card-body" id="course-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--spacing-6);"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header flex items-center justify-between" style="flex-wrap:wrap;gap:12px;">
+            <div><h2 class="card-title">Pending submissions</h2><p class="card-subtitle">Work awaiting your grading</p></div>
+            <a class="btn btn-sm btn-ghost" href="submissions.html">View all</a>
+          </div>
+          <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:var(--spacing-4);" id="pending-list"></div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Upcoming</h2><p class="card-subtitle">Your assessment schedule</p></div>
+          <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:var(--spacing-4);" id="upcoming-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Recent student activity</h2></div>
+          <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:var(--spacing-4);" id="activity-list"></div>
+        </section>
+      </div>
+    </div>
+
+  </main>
+  <script src="../../js/pages/faculty/dashboard.js"></script>
+</body>
+</html>

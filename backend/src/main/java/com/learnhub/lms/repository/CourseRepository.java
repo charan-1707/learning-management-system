@@ -15,4 +15,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     boolean existsByCode(String code);
 
     boolean existsByCodeAndIdNot(String code, Long id);
+
+    long countByStatus(CourseStatus status);
 }

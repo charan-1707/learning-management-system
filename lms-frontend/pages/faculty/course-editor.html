@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Course Editor - LearnHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <script src="../../js/boot.js"></script>
+</head>
+<body data-role="faculty" data-page="faculty-course-editor" data-title="Course Editor">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <header class="header" id="header"></header>
+  <main class="main" id="main">
+
+    <div class="page-header">
+      <div class="page-title-section">
+        <h1>Course editor</h1>
+        <p>Manage course details, modules and materials.</p>
+      </div>
+      <div class="page-actions">
+        <a class="btn btn-secondary" href="courses.html">Cancel</a>
+        <button class="btn btn-primary" id="save-course">Publish changes</button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Course editor sections">
+      <button class="tab active" data-tab="details" role="tab" aria-selected="true">Course details</button>
+      <button class="tab" data-tab="modules" role="tab" aria-selected="false">Modules &amp; materials</button>
+      <button class="tab" data-tab="students" role="tab" aria-selected="false">Students</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="details">
+      <section class="card">
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" for="ce-name">Course name</label>
+              <input class="form-input" id="ce-name" value="Data Structures & Algorithms">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" for="ce-code">Course code</label>
+              <input class="form-input" id="ce-code" value="CS 201">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" for="ce-credits">Credits</label>
+              <select class="form-input form-select" id="ce-credits">
+                <option>2</option><option selected>3</option><option>4</option><option>5</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" for="ce-instructor">Instructor</label>
+              <input class="form-input" id="ce-instructor" value="Dr. Priya Sharma">
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <label class="form-label" for="ce-desc">Description</label>
+            <textarea class="form-input form-textarea" id="ce-desc" rows="4">A rigorous introduction to fundamental data structures — arrays, linked lists, stacks, queues, trees, heaps and graphs — along with the core algorithms that operate on them.</textarea>
+          </div>
+          <div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+            <div>
+              <label class="form-label">Course thumbnail</label>
+              <div class="file-upload" id="thumb-upload" style="padding:24px;">
+                <div style="color:var(--color-text-muted);display:flex;justify-content:center;margin-bottom:8px;">UPLOAD_ICON</div>
+                <div class="file-upload-text" style="font-size:13px;">Click to upload an image</div>
+                <div class="file-upload-hint" style="font-size:12px;">PNG or JPG, 1200 x 640 recommended</div>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Visibility</label>
+              <div style="display:flex;gap:16px;padding-top:10px;">
+                <label class="checkbox-wrapper"><input type="radio" class="checkbox-input" name="vis" value="published" checked><span class="checkbox-box" style="border-radius:50%;"></span><span class="checkbox-label">Published</span></label>
+                <label class="checkbox-wrapper"><input type="radio" class="checkbox-input" name="vis" value="draft"><span class="checkbox-box" style="border-radius:50%;"></span><span class="checkbox-label">Draft</span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-panel="modules">
+      <div class="flex items-center justify-between" style="margin-bottom:var(--spacing-4);">
+        <div>
+          <h2 class="card-title">Modules &amp; materials</h2>
+          <p class="card-subtitle" style="margin-top:2px;">Add edit or reorder the modules in this course</p>
+        </div>
+        <button class="btn btn-primary" id="add-module">+ Add module</button>
+      </div>
+      <div id="modules-editor"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="students">
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">Enrolled students</h2><p class="card-subtitle">Students currently enrolled in this course</p></div>
+        <div class="card-body" style="padding-top:0;padding-bottom:0;">
+          <div class="table-wrapper" style="border:none;border-radius:0;">
+            <table class="table">
+              <thead><tr><th>Student</th><th>Program</th><th>Attendance</th><th>Assignment avg</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><div class="avatar-cell">AV1 Alex Johnson</div></td><td>B.Tech CSE</td><td>92%</td><td>85%</td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
+                <tr><td><div class="avatar-cell">AV2 Meera Patel</div></td><td>B.Tech CSE</td><td>96%</td><td>91%</td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
+                <tr><td><div class="avatar-cell">AV3 Rohan Gupta</div></td><td>B.Tech IT</td><td>78%</td><td>74%</td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
+                <tr><td><div class="avatar-cell">AV4 Sneha Reddy</div></td><td>B.Tech CSE</td><td>94%</td><td>88%</td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+  <script src="../../js/pages/faculty/course-editor.js"></script>
+</body>
+</html>

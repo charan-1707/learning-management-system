@@ -1,5 +1,6 @@
 package com.learnhub.lms.service.impl;
 
+import com.learnhub.lms.dto.request.ProfileUpdateRequest;
 import com.learnhub.lms.dto.request.UserRequest;
 import com.learnhub.lms.dto.response.UserResponse;
 import com.learnhub.lms.entity.User;
@@ -58,6 +59,25 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateResourceException("User with email '" + newEmail + "' already exists.");
         }
         applyRequest(user, request);
+        return mapper.toUserResponse(userRepository.save(user));
+    }
+
+    @Override
+    public UserResponse updateSelf(Long id, ProfileUpdateRequest request) {
+        User user = findOrThrow(id);
+        if (StringUtils.hasText(request.getName())) {
+            user.setName(request.getName());
+        }
+        if (StringUtils.hasText(request.getEmail())) {
+            String newEmail = normalizeEmail(request.getEmail());
+            if (!newEmail.equals(user.getEmail()) && userRepository.existsByEmail(newEmail)) {
+                throw new DuplicateResourceException("User with email '" + newEmail + "' already exists.");
+            }
+            user.setEmail(newEmail);
+        }
+        if (StringUtils.hasText(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
         return mapper.toUserResponse(userRepository.save(user));
     }
 

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Course Details - LearnHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <script src="../../js/boot.js"></script>
+</head>
+<body data-role="student" data-page="student-course-details" data-title="Course Details">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <header class="header" id="header"></header>
+  <main class="main" id="main">
+
+    <div id="course-banner"></div>
+
+    <div class="tabs" role="tablist" aria-label="Course sections">
+      <button class="tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+      <button class="tab" data-tab="materials" role="tab" aria-selected="false">Materials</button>
+      <button class="tab" data-tab="assignments" role="tab" aria-selected="false">Assignments</button>
+      <button class="tab" data-tab="quizzes" role="tab" aria-selected="false">Quizzes</button>
+      <button class="tab" data-tab="grades" role="tab" aria-selected="false">Grades</button>
+      <button class="tab" data-tab="announcements" role="tab" aria-selected="false">Announcements</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="overview" role="tabpanel">
+      <section class="card" id="overview-panel"></section>
+    </div>
+    <div class="tab-panel" data-panel="materials" role="tabpanel">
+      <section class="card" id="materials-panel"></section>
+    </div>
+    <div class="tab-panel" data-panel="assignments" role="tabpanel">
+      <section class="card" id="assignments-panel"></section>
+    </div>
+    <div class="tab-panel" data-panel="quizzes" role="tabpanel">
+      <section class="card" id="quizzes-panel"></section>
+    </div>
+    <div class="tab-panel" data-panel="grades" role="tabpanel">
+      <section class="card" id="grades-panel"></section>
+    </div>
+    <div class="tab-panel" data-panel="announcements" role="tabpanel">
+      <section class="card" id="announcements-panel"></section>
+    </div>
+
+  </main>
+  <script src="../../js/pages/student/course-details.js"></script>
+</body>
+</html>
