@@ -1,6 +1,7 @@
 package com.learnhub.lms.service.impl;
 
 import com.learnhub.lms.dto.request.EnrollmentRequest;
+import com.learnhub.lms.dto.response.CourseResponse;
 import com.learnhub.lms.dto.response.EnrollmentResponse;
 import com.learnhub.lms.entity.Course;
 import com.learnhub.lms.entity.Enrollment;
@@ -40,17 +41,22 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public EnrollmentResponse enroll(EnrollmentRequest request) {
-        User student = userRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", request.getStudentId()));
+        return enroll(request.getStudentId(), request.getCourseId());
+    }
+
+    @Override
+    public EnrollmentResponse enroll(Long studentId, Long courseId) {
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", studentId));
         if (student.getRole() != UserRole.STUDENT) {
             throw new BusinessRuleException("Only students can enroll in courses.");
         }
-        Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Course", request.getCourseId()));
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
         if (course.getStatus() != CourseStatus.PUBLISHED) {
             throw new BusinessRuleException("Cannot enroll in a course that is not published.");
         }
-        if (enrollmentRepository.existsByStudentIdAndCourseId(request.getStudentId(), request.getCourseId())) {
+        if (enrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId)) {
             throw new DuplicateResourceException("Student is already enrolled in this course.");
         }
 
@@ -60,6 +66,28 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollment.setProgress(BigDecimal.ZERO);
         enrollment.setStatus(EnrollmentStatus.ACTIVE);
         return mapper.toEnrollmentResponse(enrollmentRepository.save(enrollment));
+    }
+
+    @Override
+    public void unenroll(Long studentId, Long courseId) {
+        Enrollment enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment", "student " + studentId + " in course " + courseId));
+        enrollmentRepository.delete(enrollment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isEnrolled(Long studentId, Long courseId) {
+        return enrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CourseResponse> getCoursesByStudent(Long studentId) {
+        return enrollmentRepository.findByStudentId(studentId).stream()
+                .map(Enrollment::getCourse)
+                .map(mapper::toCourseResponse)
+                .toList();
     }
 
     @Override

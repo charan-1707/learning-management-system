@@ -3,12 +3,17 @@ package com.learnhub.lms.controller;
 import com.learnhub.lms.dto.request.CourseRequest;
 import com.learnhub.lms.dto.request.CourseStatusUpdateRequest;
 import com.learnhub.lms.dto.response.CourseResponse;
+import com.learnhub.lms.dto.response.EnrollmentCheckResponse;
+import com.learnhub.lms.dto.response.EnrollmentResponse;
 import com.learnhub.lms.enums.CourseStatus;
+import com.learnhub.lms.security.UserPrincipal;
 import com.learnhub.lms.service.CourseService;
+import com.learnhub.lms.service.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,6 +32,7 @@ import java.util.List;
 public class CourseController {
 
     private final CourseService courseService;
+    private final EnrollmentService enrollmentService;
 
     @GetMapping
     public List<CourseResponse> getAllCourses() {
@@ -73,5 +79,27 @@ public class CourseController {
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ---- Enrollment endpoints (students only) ----
+
+    @PostMapping("/{courseId}/enroll")
+    public ResponseEntity<EnrollmentResponse> enroll(@PathVariable Long courseId,
+                                                     @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(enrollmentService.enroll(principal.getId(), courseId));
+    }
+
+    @DeleteMapping("/{courseId}/enroll")
+    public ResponseEntity<Void> unenroll(@PathVariable Long courseId,
+                                         @AuthenticationPrincipal UserPrincipal principal) {
+        enrollmentService.unenroll(principal.getId(), courseId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{courseId}/enrollment")
+    public EnrollmentCheckResponse checkEnrollment(@PathVariable Long courseId,
+                                                   @AuthenticationPrincipal UserPrincipal principal) {
+        return new EnrollmentCheckResponse(enrollmentService.isEnrolled(principal.getId(), courseId));
     }
 }

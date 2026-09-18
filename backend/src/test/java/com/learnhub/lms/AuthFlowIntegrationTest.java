@@ -118,7 +118,7 @@ class AuthFlowIntegrationTest {
     @Test
     void studentCannotManageContentAndSelfEnrolls() throws Exception {
         User admin = createUser("Admin", "admin.smoke@test.com", UserRole.ADMIN);
-        User faculty = createUser("Prof", "prof.smoke@test.com", UserRole.FACULTY);
+        createUser("Prof", "prof.smoke@test.com", UserRole.FACULTY);
         String facultyToken = login("prof.smoke@test.com", "secret123"); // user#login saves it
         String studentToken = register("Bob Student", "bob.smoke@test.com", "secret123");
 
@@ -126,14 +126,14 @@ class AuthFlowIntegrationTest {
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CourseRequest("Course", "C1", "desc", "cat", null, faculty.getId()))))
+                                new CourseRequest("Course", "C1", "desc", "cat", null))))
                 .andExpect(status().isForbidden());
 
         MvcResult course = mockMvc.perform(post("/api/courses")
                         .header("Authorization", "Bearer " + facultyToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CourseRequest("Databases", "DB101", "SQL", "CS", null, faculty.getId()))))
+                                new CourseRequest("Databases", "DB101", "SQL", "CS", null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         long courseId = objectMapper.readTree(course.getResponse().getContentAsString()).path("id").asLong();
@@ -161,12 +161,11 @@ class AuthFlowIntegrationTest {
         String facultyToken = login("prof2.smoke@test.com", "secret123");
         String studentToken = register("Carol Student", "carol.smoke@test.com", "secret123");
 
-        User faculty = userRepository.findByEmail("prof2.smoke@test.com").orElseThrow();
         MvcResult course = mockMvc.perform(post("/api/courses")
                         .header("Authorization", "Bearer " + facultyToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CourseRequest("Maths", "MATH101", "basic", "Math", null, faculty.getId()))))
+                                new CourseRequest("Maths", "MATH101", "basic", "Math", null))))
                 .andExpect(status().isCreated()).andReturn();
         long courseId = objectMapper.readTree(course.getResponse().getContentAsString()).path("id").asLong();
 

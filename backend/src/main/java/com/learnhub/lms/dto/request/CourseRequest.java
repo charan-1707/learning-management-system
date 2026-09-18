@@ -2,7 +2,6 @@ package com.learnhub.lms.dto.request;
 
 import com.learnhub.lms.enums.CourseStatus;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +29,4 @@ public class CourseRequest {
     private String category;
 
     private CourseStatus status = CourseStatus.DRAFT;
-
-    @NotNull
-    private Long facultyId;
 }

@@ -15,9 +15,9 @@ import com.learnhub.lms.entity.Submission;
 import com.learnhub.lms.entity.User;
 import com.learnhub.lms.enums.CourseStatus;
 import com.learnhub.lms.enums.UserRole;
-import com.learnhub.lms.exception.BusinessRuleException;
 import com.learnhub.lms.exception.DuplicateResourceException;
 import com.learnhub.lms.exception.ResourceNotFoundException;
+import com.learnhub.lms.exception.UnauthorizedActionException;
 import com.learnhub.lms.mapper.EntityMapper;
 import com.learnhub.lms.repository.AnnouncementRepository;
 import com.learnhub.lms.repository.AssignmentRepository;
@@ -33,6 +33,8 @@ import com.learnhub.lms.repository.QuizQuestionRepository;
 import com.learnhub.lms.repository.QuizRepository;
 import com.learnhub.lms.repository.SubmissionRepository;
 import com.learnhub.lms.repository.UserRepository;
+import com.learnhub.lms.security.SecurityUtils;
+import com.learnhub.lms.security.UserPrincipal;
 import com.learnhub.lms.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -66,14 +68,17 @@ public class CourseServiceImpl implements CourseService {
         if (courseRepository.existsByCode(request.getCode())) {
             throw new DuplicateResourceException("Course code '" + request.getCode() + "' already exists.");
         }
-        User faculty = userRepository.findById(request.getFacultyId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", request.getFacultyId()));
-        if (faculty.getRole() != UserRole.FACULTY && faculty.getRole() != UserRole.ADMIN) {
-            throw new BusinessRuleException("Course faculty must have the FACULTY (or ADMIN) role.");
+
+        UserPrincipal principal = SecurityUtils.currentUser();
+        if (principal == null || (principal.getRole() != UserRole.FACULTY && principal.getRole() != UserRole.ADMIN)) {
+            throw new UnauthorizedActionException("Only faculty or admin can create courses.");
         }
+        User instructor = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", principal.getId()));
+
         Course course = new Course();
         applyRequest(course, request);
-        course.setFaculty(faculty);
+        course.setFaculty(instructor);
         return mapper.toCourseResponse(courseRepository.save(course));
     }
 
@@ -110,6 +115,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public CourseResponse updateCourse(Long id, CourseRequest request) {
         Course course = findOrThrow(id);
+        checkOwnership(course);
         if (!request.getCode().equals(course.getCode())
                 && courseRepository.existsByCodeAndIdNot(request.getCode(), id)) {
             throw new DuplicateResourceException("Course code '" + request.getCode() + "' already exists.");
@@ -121,6 +127,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public CourseResponse setCourseStatus(Long id, CourseStatus status) {
         Course course = findOrThrow(id);
+        checkOwnership(course);
         course.setStatus(status);
         return mapper.toCourseResponse(courseRepository.save(course));
     }
@@ -128,6 +135,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public void deleteCourse(Long id) {
         Course course = findOrThrow(id);
+        checkOwnership(course);
 
         List<Module> modules = moduleRepository.findByCourseId(id);
         if (!modules.isEmpty()) {
@@ -172,5 +180,15 @@ public class CourseServiceImpl implements CourseService {
     private Course findOrThrow(Long id) {
         return courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
+    }
+
+    private void checkOwnership(Course course) {
+        UserPrincipal principal = SecurityUtils.currentUser();
+        if (principal == null) {
+            throw new UnauthorizedActionException("Authentication required.");
+        }
+        if (!principal.isAdmin() && !course.getFaculty().getId().equals(principal.getId())) {
+            throw new UnauthorizedActionException("You can only manage your own courses.");
+        }
     }
 }

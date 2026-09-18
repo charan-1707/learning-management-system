@@ -74,6 +74,11 @@ public class SecurityConfig {
 
                         // --- AUTHENTICATED: self-service ---
                         .requestMatchers("/api/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/courses/*/enrollment").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/courses/*/enroll").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.DELETE, "/api/courses/*/enroll").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.GET, "/api/students/me/courses").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.GET, "/api/instructors/me/courses").hasAnyRole("FACULTY", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users/*/notifications/**").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/notifications/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()
