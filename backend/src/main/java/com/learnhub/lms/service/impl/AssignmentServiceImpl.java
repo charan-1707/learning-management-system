@@ -58,8 +58,8 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     public void deleteAssignment(Long assignmentId) {
         Assignment assignment = findOrThrow(assignmentId);
-        submissionRepository.deleteAll(submissionRepository.findByAssignmentId(assignmentId));
-        assignmentRepository.delete(assignment);
+        submissionRepository.deleteByAssignmentIdsIn(List.of(assignmentId));
+        assignmentRepository.deleteAssignmentById(assignmentId);
     }
 
     private void applyRequest(Assignment assignment, AssignmentRequest request) {

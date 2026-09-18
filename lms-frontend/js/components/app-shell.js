@@ -328,6 +328,8 @@ window.LH = window.LH || {};
     }
   }
 
+  shell.refreshUnread = syncUnread;
+
   shell.openDrawer = function () {
     document.getElementById('sidebar').classList.add('open');
     document.getElementById('sidebar-overlay').classList.add('open');

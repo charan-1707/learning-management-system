@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign in - LearnHub</title>
+  <title>Create account - LearnHub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -59,28 +59,39 @@
           LearnHub
         </div>
 
-        <h1 class="auth-heading">Welcome back</h1>
-        <p class="auth-subheading">Sign in to access your courses, assignments and results.</p>
+        <h1 class="auth-heading">Create your account</h1>
+        <p class="auth-subheading">Join LearnHub as a student and start learning today.</p>
 
-        <form id="login-form" novalidate>
+        <form id="register-form" novalidate>
           <div class="auth-field">
-            <label class="form-label" for="login-email">Email address</label>
+            <label class="form-label" for="reg-name">Full name</label>
+            <div class="auth-input-wrap">
+              <span class="field-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input class="auth-input" type="text" id="reg-name" name="name" placeholder="Jane Doe" autocomplete="name" required>
+            </div>
+            <div class="auth-error-text" data-error-for="name"></div>
+          </div>
+
+          <div class="auth-field">
+            <label class="form-label" for="reg-email">Email address</label>
             <div class="auth-input-wrap">
               <span class="field-icon">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               </span>
-              <input class="auth-input" type="email" id="login-email" name="email" placeholder="you@learnhub.com" autocomplete="email" required>
+              <input class="auth-input" type="email" id="reg-email" name="email" placeholder="you@learnhub.com" autocomplete="email" required>
             </div>
             <div class="auth-error-text" data-error-for="email"></div>
           </div>
 
           <div class="auth-field">
-            <label class="form-label" for="login-password">Password</label>
+            <label class="form-label" for="reg-password">Password</label>
             <div class="auth-input-wrap">
               <span class="field-icon">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </span>
-              <input class="auth-input" type="password" id="login-password" name="password" placeholder="Your password" autocomplete="current-password" required>
+              <input class="auth-input" type="password" id="reg-password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required>
               <button type="button" class="password-toggle" id="toggle-password" aria-label="Show password">
                 <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 <svg id="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -89,51 +100,18 @@
             <div class="auth-error-text" data-error-for="password"></div>
           </div>
 
-          <div class="auth-field-row">
-            <label class="checkbox-wrapper" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="checkbox" class="checkbox-input" id="remember-me" checked>
-              <span class="checkbox-box"></span>
-              <span class="checkbox-label" style="font-size:13px;">Remember me</span>
-            </label>
-            <a href="#" class="auth-link" id="forgot-link">Forgot password?</a>
-          </div>
+          <button type="submit" class="auth-submit" id="register-btn">Create account</button>
 
-          <button type="submit" class="auth-submit" id="login-btn">Sign in</button>
-
-          <div class="auth-error-text" id="login-error" style="text-align:center;margin-top:12px;"></div>
+          <div class="auth-error-text" id="register-error" style="text-align:center;margin-top:12px;"></div>
         </form>
 
-        <div class="auth-demo">
-          <div class="auth-demo-label">Demo accounts</div>
-          <div class="auth-demo-grid">
-            <button type="button" class="auth-demo-btn" data-demo-email="student@learnhub.com" data-demo-password="student">
-              <span class="demo-icon student"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6"/><path d="M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
-              <div class="demo-role">Student</div>
-              <div class="demo-email">student@learnhub.com</div>
-            </button>
-            <button type="button" class="auth-demo-btn" data-demo-email="faculty@learnhub.com" data-demo-password="faculty">
-              <span class="demo-icon faculty"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
-              <div class="demo-role">Faculty</div>
-              <div class="demo-email">faculty@learnhub.com</div>
-            </button>
-            <button type="button" class="auth-demo-btn" data-demo-email="admin@learnhub.com" data-demo-password="admin">
-              <span class="demo-icon admin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-              <div class="demo-role">Admin</div>
-              <div class="demo-email">admin@learnhub.com</div>
-            </button>
-          </div>
-        </div>
-
-        <div class="auth-footer">
-          Need help? <a href="#" id="help-link">Contact IT support</a>
-        </div>
-        <div class="auth-footer" id="register-row" style="display:none;margin-top:8px;">
-          New here? <a href="register.html">Create an account</a>
+        <div class="auth-footer" style="margin-top:16px;">
+          Already have an account? <a href="login.html">Sign in</a>
         </div>
       </div>
     </main>
   </div>
 
-  <script src="../../js/pages/auth/login.js"></script>
+  <script src="../../js/pages/auth/register.js"></script>
 </body>
 </html>

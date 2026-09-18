@@ -159,7 +159,9 @@ window.LH = window.LH || {};
     },
     submit: function (studentId, assignmentId, content) { return resolve(DB.submit(studentId, assignmentId, content)); },
     grade: function (assignmentId, submissionId, score, feedback) {
-      return resolve(DB.submissions.grade(assignmentId, submissionId, score, feedback));
+      var result = DB.submissions.grade(assignmentId, submissionId, score, feedback);
+      if (LH.live && LH.live.enabled) LH.live.submissionGrade(submissionId, score, feedback);
+      return resolve(result);
     }
   };
 
@@ -190,7 +192,11 @@ window.LH = window.LH || {};
       return resolve(((DB.collection('quizQuestions') || {}))[id] || []);
     },
     courseName: courseName,
-    include: function (rec) { return resolve(DB.create('quizzes', rec)); },
+    include: function (rec) {
+      var created = DB.create('quizzes', rec);
+      if (LH.live && LH.live.enabled) LH.live.quizInclude(rec);
+      return resolve(created);
+    },
     replaceQuestions: function (quizId, questions) {
       var all = Object.assign({}, DB.collection('quizQuestions') || {});
       all[quizId] = questions;
@@ -251,11 +257,13 @@ window.LH = window.LH || {};
       DB.list('notifications').forEach(function (n) {
         if (n.id === id) { n.read = true; DB.update('notifications', id, { read: true }); }
       });
+      if (LH.live && LH.live.enabled) LH.live.notifRead(id);
       return resolve(true);
     },
     markAllRead: function () {
       DB.list('notifications').forEach(function (n) { n.read = true; });
       DB.persist('notifications');
+      if (LH.live && LH.live.enabled) LH.live.notifReadAll();
       return resolve(true);
     }
   };

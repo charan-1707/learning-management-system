@@ -58,11 +58,13 @@ public class ModuleServiceImpl implements ModuleService {
     @Override
     public void deleteModule(Long moduleId) {
         Module module = findOrThrow(moduleId);
-        List<Lesson> lessons = lessonRepository.findByModuleId(moduleId);
-        lessonProgressRepository.deleteAll(
-                lessonProgressRepository.findByLessonIdIn(lessons.stream().map(Lesson::getId).toList()));
-        lessonRepository.deleteAll(lessons);
-        moduleRepository.delete(module);
+        List<Long> lessonIds = lessonRepository.findByModuleId(moduleId).stream()
+                .map(Lesson::getId).toList();
+        if (!lessonIds.isEmpty()) {
+            lessonProgressRepository.deleteByLessonIdsIn(lessonIds);
+        }
+        lessonRepository.deleteByModuleIdsIn(List.of(moduleId));
+        moduleRepository.deleteModuleById(moduleId);
     }
 
     @Override

@@ -17,6 +17,7 @@
     'utils/validation.js',
     'mock/data.js',
     'db.js',
+    'api/backend.js',
     'api/index.js',
     'components/icons.js',
     'components/ui.js',

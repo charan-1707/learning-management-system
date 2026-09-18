@@ -74,11 +74,14 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public void deleteQuiz(Long quizId) {
         Quiz quiz = findOrThrow(quizId);
-        quizQuestionRepository.deleteAll(quizQuestionRepository.findByQuizId(quizId));
-        List<QuizAttempt> attempts = quizAttemptRepository.findByQuizId(quizId);
-        attempts.forEach(a -> quizAnswerRepository.deleteAll(quizAnswerRepository.findByAttemptId(a.getId())));
-        quizAttemptRepository.deleteAll(attempts);
-        quizRepository.delete(quiz);
+        List<Long> attemptIds = quizAttemptRepository.findByQuizId(quizId).stream()
+                .map(QuizAttempt::getId).toList();
+        if (!attemptIds.isEmpty()) {
+            quizAnswerRepository.deleteByAttemptIdsIn(attemptIds);
+        }
+        quizQuestionRepository.deleteByQuizIdsIn(List.of(quizId));
+        quizAttemptRepository.deleteByQuizIdsIn(List.of(quizId));
+        quizRepository.deleteQuizById(quizId);
     }
 
     @Override

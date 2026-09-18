@@ -3,36 +3,62 @@
 
   var $ = LH.dom.$;
 
-  function submit(email, password, remember) {
-    var res = LH.api.auth.login(email, password);
+  function showError(message) {
     var errEl = $('#login-error');
-    if (errEl) errEl.textContent = '';
+    if (errEl) {
+      errEl.textContent = message;
+      errEl.style.display = 'block';
+    }
+    var e = $('#login-email');
+    var p = $('#login-password');
+    if (e) e.classList.add('error');
+    if (p) p.classList.add('error');
+  }
 
+  function redirectByRole(role) {
+    var target;
+    if (role === 'student') target = '../student/dashboard.html';
+    else if (role === 'faculty') target = '../faculty/dashboard.html';
+    else target = '../admin/dashboard.html';
+    window.location.href = target;
+  }
+
+  function submitMock(email, password) {
+    var res = LH.api.auth.login(email, password);
     if (!res.ok) {
-      if (errEl) {
-        errEl.textContent = 'Invalid email or password. Please try the demo accounts below.';
-        errEl.style.display = 'block';
-      }
-      var e = $('#login-email');
-      var p = $('#login-password');
-      if (e) e.classList.add('error');
-      if (p) p.classList.add('error');
+      showError(res.suspended ? 'Your account has been disabled.' : 'Invalid email or password. Please try the demo accounts below.');
       return;
     }
-
-    var user = res.user;
-    user = JSON.parse(JSON.stringify(user));
+    var user = JSON.parse(JSON.stringify(res.user));
     delete user.password;
-
     try {
       localStorage.setItem('learnhub-user', JSON.stringify(user));
     } catch (e) { /* private browsing - session only */ }
+    redirectByRole(user.role);
+  }
 
-    var target;
-    if (user.role === 'student') target = '../student/dashboard.html';
-    else if (user.role === 'faculty') target = '../faculty/dashboard.html';
-    else target = '../admin/dashboard.html';
-    window.location.href = target;
+  function submitLive(email, password) {
+    var btn = $('#login-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+    LH.live.login(email, password).then(function (res) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+      if (!res.ok) {
+        showError(res.message || 'Sign in failed. Please try again.');
+        return;
+      }
+      redirectByRole(res.user.role);
+    });
+  }
+
+  function submit(email, password, remember) {
+    if (LH.live) {
+      LH.live.ready().then(function (enabled) {
+        if (enabled) submitLive(email, password);
+        else submitMock(email, password);
+      });
+      return;
+    }
+    submitMock(email, password);
   }
 
   function init() {
@@ -104,6 +130,16 @@
         if (email) email.focus();
       });
     });
+
+    if (LH.live) {
+      LH.live.ready().then(function (enabled) {
+        if (!enabled) return;
+        var demo = document.querySelector('.auth-demo');
+        if (demo) demo.style.display = 'none';
+        var regRow = $('#register-row');
+        if (regRow) regRow.style.display = '';
+      });
+    }
 
     var forgot = $('#forgot-link');
     if (forgot) forgot.addEventListener('click', function (e) {

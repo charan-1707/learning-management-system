@@ -11,6 +11,8 @@
   var secondsLeft = 0;
   var timerHandle = null;
   var startedAt = null;
+  var attemptId = null;
+  var liveRolling = false;
 
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -172,11 +174,8 @@
     return score;
   }
 
-  function submitQuiz(auto) {
-    stopTimer();
-    var score = calcScore();
-    var total = questions.length;
-    var pct = Math.round(score / total * 100);
+  function showSummary(score, total, auto, liveGrade) {
+    var pct = total ? Math.round(score / total * 100) : 0;
 
     if (quiz.bestScore) {
       var prev = quiz.bestScore.split('/');
@@ -190,6 +189,7 @@
 
     var details = '';
     if (auto) details = 'Your time ran out. The quiz was submitted automatically.';
+    if (liveGrade) details = (details ? details + ' ' : '') + 'Graded by the server.';
 
     var body =
       '<div style="text-align:center;padding:16px 0;">' +
@@ -211,7 +211,6 @@
       onOpen: function () {}
     });
 
-    /* Close button returns to list; allow one follow-up */
     setTimeout(function () {
       var actions = modal.overlay.querySelector('.modal-body');
       if (actions) {
@@ -227,15 +226,55 @@
     LH.toast.success('Quiz submitted', 'Your result for ' + quiz.title + ' is ' + score + '/' + total + '.');
   }
 
-  function addReviewLink(modal) {
-    var closeBtn = modal.overlay.querySelector('[data-modal-close]');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', function () {
-        setTimeout(function () {
-          window.location.href = 'quizzes.html';
-        }, 250);
-      });
+  function submitLive(auto) {
+    var answerList = [];
+    questions.forEach(function (q, i) {
+      if (answers[i] != null) {
+        answerList.push({ questionId: q.id, selectedOption: 'ABCD'.charAt(answers[i]) });
+      }
+    });
+
+    LH.live.submitQuizAttempt(attemptId, answerList).then(function (res) {
+      if (!res.ok) {
+        LH.toast.error('Could not submit quiz', res.message || 'The server rejected the submission.');
+        return;
+      }
+      var total = questions.length;
+      var score = res.score != null ? Math.round(res.score) : 0;
+      var max = res.maxMarks != null ? res.maxMarks : total;
+      if (!max) max = total;
+      showSummary(score, max, auto, true);
+    });
+  }
+
+  function submitQuiz(auto) {
+    stopTimer();
+    if (liveRolling) {
+      LH.toast.info('Quiz', 'Preparing your attempt — please wait a moment.');
+      return;
     }
+    if (attemptId) {
+      submitLive(auto);
+      return;
+    }
+    var score = calcScore();
+    var total = questions.length;
+    showSummary(score, total, auto, false);
+  }
+
+  function beginLiveAttempt(quizId) {
+    if (!LH.live || !LH.live.enabled) return;
+    liveRolling = true;
+    LH.live.startQuiz(quizId).then(function (res) {
+      if (!res.ok) {
+        liveRolling = false;
+        LH.toast.error('Quiz unavailable', res.message || 'You cannot take this quiz right now.');
+        setTimeout(function () { window.location.href = 'quizzes.html'; }, 1600);
+        return;
+      }
+      attemptId = res.attemptId;
+      liveRolling = false;
+    });
   }
 
   function init() {
@@ -265,6 +304,12 @@
         e.returnValue = '';
       }
     });
+
+    if (LH.live && LH.live.ready) {
+      LH.live.ready().then(function (enabled) {
+        if (enabled) beginLiveAttempt(quiz.id);
+      });
+    }
   }
 
   LH.app.register('student-quiz-attempt', init);

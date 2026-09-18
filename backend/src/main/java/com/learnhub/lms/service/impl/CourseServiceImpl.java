@@ -140,31 +140,41 @@ public class CourseServiceImpl implements CourseService {
         List<Module> modules = moduleRepository.findByCourseId(id);
         if (!modules.isEmpty()) {
             List<Long> moduleIds = modules.stream().map(Module::getId).toList();
-            List<Lesson> lessons = lessonRepository.findByModuleIdIn(moduleIds);
-            lessonProgressRepository.deleteAll(lessonProgressRepository.findByLessonIdIn(
-                    lessons.stream().map(Lesson::getId).toList()));
-            lessonRepository.deleteAll(lessons);
-            moduleRepository.deleteAll(modules);
+            List<Long> lessonIds = lessonRepository.findByModuleIdIn(moduleIds).stream()
+                    .map(Lesson::getId).toList();
+            if (!lessonIds.isEmpty()) {
+                lessonProgressRepository.deleteByLessonIdsIn(lessonIds);
+            }
+            lessonRepository.deleteByModuleIdsIn(moduleIds);
+            moduleRepository.deleteByCourseId(id);
         }
 
-        List<Assignment> assignments = assignmentRepository.findByCourseId(id);
-        assignments.forEach(a -> submissionRepository.deleteAll(submissionRepository.findByAssignmentId(a.getId())));
-        assignmentRepository.deleteAll(assignments);
-
-        List<Quiz> quizzes = quizRepository.findByCourseId(id);
-        for (Quiz quiz : quizzes) {
-            quizQuestionRepository.deleteAll(quizQuestionRepository.findByQuizId(quiz.getId()));
-            List<QuizAttempt> attempts = quizAttemptRepository.findByQuizId(quiz.getId());
-            attempts.forEach(a -> quizAnswerRepository.deleteAll(quizAnswerRepository.findByAttemptId(a.getId())));
-            quizAttemptRepository.deleteAll(attempts);
+        List<Long> assignmentIds = assignmentRepository.findByCourseId(id).stream()
+                .map(Assignment::getId).toList();
+        if (!assignmentIds.isEmpty()) {
+            submissionRepository.deleteByAssignmentIdsIn(assignmentIds);
         }
-        quizRepository.deleteAll(quizzes);
+        assignmentRepository.deleteByCourseIdsIn(List.of(id));
 
-        attendanceRepository.deleteAll(attendanceRepository.findByCourseId(id));
-        announcementRepository.deleteAll(announcementRepository.findByCourseIdOrderByCreatedAtDesc(id));
-        enrollmentRepository.deleteAll(enrollmentRepository.findByCourseId(id));
+        List<Long> quizIds = quizRepository.findByCourseId(id).stream().map(Quiz::getId).toList();
+        if (!quizIds.isEmpty()) {
+            List<Long> attemptIds = quizIds.stream()
+                    .flatMap(q -> quizAttemptRepository.findByQuizId(q).stream())
+                    .map(QuizAttempt::getId)
+                    .toList();
+            if (!attemptIds.isEmpty()) {
+                quizAnswerRepository.deleteByAttemptIdsIn(attemptIds);
+            }
+            quizQuestionRepository.deleteByQuizIdsIn(quizIds);
+            quizAttemptRepository.deleteByQuizIdsIn(quizIds);
+            quizRepository.deleteByCourseId(id);
+        }
 
-        courseRepository.delete(course);
+        attendanceRepository.deleteByCourseIdsIn(List.of(id));
+        announcementRepository.deleteByCourseIdsIn(List.of(id));
+        enrollmentRepository.deleteByCourseIdsIn(List.of(id));
+
+        courseRepository.deleteCourseById(id);
     }
 
     private void applyRequest(Course course, CourseRequest request) {

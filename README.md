@@ -225,6 +225,51 @@ AUTHENTICATED: PUT /api/auth/me
 
 4. The API is served at `http://localhost:8080/api`.
 
+## Phase 4 — Frontend Integration (single deployable)
+
+The vanilla JS frontend (`lms-frontend/`) is now embedded in the Spring Boot jar and served from the same origin as the API. The app detects a reachable backend at boot and switches into **live mode** (real MySQL via REST); if the backend is unreachable it falls back to the in-browser mock data store.
+
+### How it works
+
+- `backend/pom.xml` copies `../lms-frontend` into `target/classes/static`; `index.html` redirects to `pages/auth/login.html`.
+- `js/boot.js` loads the API adapter: `api/backend.js` then `api/index.js`.
+- At boot, `app.js` runs an async `LH.live.hydrate()` **before** any page renderer runs, so every page's direct reads of `LH.mock.*` / `LH.db.*` return real server data (the mock cache is replaced in place).
+- Mutations call the real DB store methods (`DB.create/update/remove`, `DB.submit`, `DB.enrollments.enroll`, `DB.markLessonComplete`, reorders, `API.quizzes.include`, `submissions.grade`, notifications) — `api/backend.js` hooks into those exact methods and fires the matching REST call, so **every existing action in the UI becomes live with no page rewrites**.
+- Auth uses `localStorage` (`learnhub-token`, `learnhub-user`); 401 clears auth and redirects to login. The JWT is keyed on email — changing email logs you out.
+
+### What changed
+
+- `js/api/backend.js` (new) — transport, JWT, probe/`ready()`, role-scoped `hydrate()` + DTO mappers, mutation hooks, quiz publish/submit, grading, notifications.
+- `js/boot.js`, `js/app.js`, `js/components/app-shell.js`, `js/api/index.js`, `js/pages/auth/login.js`, `js/pages/student/quiz-attempt.js`, `pages/auth/login.html`.
+- `pages/auth/register.html` + `js/pages/auth/register.js` (new) — self-registration (creates STUDENT accounts only).
+- Backend: replace JPA entity deletes with bulk JPQL deletes in `CourseService`/`QuizService`/`ModuleService`/`LessonService`/`AssignmentService` so cascaded delete no longer triggers Hibernate FK-nulling updates (fixed `delete course` failing under real quiz-attempt data).
+
+### Bootstrap (fresh database)
+
+There is no seed. Because `/api/auth/register` always creates a **STUDENT**, promote one account to admin once, then use the UI/admin APIs to create courses from it:
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = '<your-email>';
+```
+
+### Running
+
+```
+cd backend
+mvn clean verify
+java -jar target/lms-backend-0.0.1-SNAPSHOT.jar
+```
+
+Open `http://localhost:8080` — the UI and API share this origin.
+
+### Verification
+
+- `mvn verify` — 37 tests (integration + repository).
+- `scripts/smoke` (PowerShell, ad hoc) — 56 end-to-end API checks covering register/auth, admin courses/users/stats, modules/lessons/assignments/announcements/quizzes with questions, enrollment, lesson completion, submissions + grading, quiz attempts with server scoring, notifications, and course deletion with children.
+- Note: `mvn verify`'s integration tests use fixed emails against MySQL and are **not idempotent** — re-running against a DB that already contains a previous run's rows produces duplicate-key failures. Wipe the `learnhub` tables before re-running.
+
+See `docs/integration-report.md` for the full mapping of every frontend action to its REST endpoint.
+
 ## Testing with Postman
 
 1. **Register/login** to obtain a JWT — `POST /api/auth/register` or `POST /api/auth/login` with `{"email": "...", "password": "secret123"}`.

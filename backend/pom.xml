@@ -90,6 +90,24 @@
 
     <build>
         <plugins>
+            <!-- Serve the vanilla-JS frontend (lms-frontend/) as Spring Boot static
+                 resources so the whole app runs on one origin (:8080). The frontend
+                 directory is copied to target/classes/static during process-resources. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <resources>
+                        <resource>
+                            <directory>src/main/resources</directory>
+                        </resource>
+                        <resource>
+                            <directory>${project.basedir}/../lms-frontend</directory>
+                            <targetPath>static</targetPath>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

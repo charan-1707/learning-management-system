@@ -31,14 +31,30 @@ window.LH = window.LH || {};
     if (!LH.shell.init()) return;
 
     var fn = renderers[document.body.getAttribute('data-page')];
-    if (fn) {
-      try {
-        fn();
-      } catch (e) {
-        if (window.console) console.error('[LearnHub] Page render error:', e);
+
+    function run() {
+      if (fn) {
+        try {
+          fn();
+        } catch (e) {
+          if (window.console) console.error('[LearnHub] Page render error:', e);
+        }
       }
+      document.body.classList.add('lh-ready');
     }
-    document.body.classList.add('lh-ready');
+
+    if (LH.live && LH.live.enabled) {
+      /* Live mode: pull from the backend and hydrate the in-memory cache before rendering. */
+      LH.live.hydrate().then(function (ok) {
+        if (ok) {
+          LH.live.arm();
+          if (LH.shell.refreshUnread) LH.shell.refreshUnread();
+        }
+        run();
+      });
+    } else {
+      run();
+    }
   };
 
   /* Shared markup helpers used across pages */

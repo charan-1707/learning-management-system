@@ -76,8 +76,8 @@ public class LessonServiceImpl implements LessonService {
     @Override
     public void deleteLesson(Long lessonId) {
         Lesson lesson = findOrThrow(lessonId);
-        lessonProgressRepository.deleteAll(lessonProgressRepository.findByLessonId(lessonId));
-        lessonRepository.delete(lesson);
+        lessonProgressRepository.deleteByLessonIdsIn(List.of(lessonId));
+        lessonRepository.deleteLessonById(lessonId);
     }
 
     @Override
