@@ -1,0 +1,12 @@
+# Keep shell scripts + sources LF so Render's Linux build never chokes on CRLF
+# (critical for lms-backend/mvnw: a CRLF wrapper fails with a cryptic error).
+mvnw text eol=lf
+*.java text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.sql text eol=lf
+*.xml text eol=lf

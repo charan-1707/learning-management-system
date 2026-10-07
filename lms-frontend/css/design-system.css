@@ -1,0 +1,180 @@
+/* ==========================================================================
+   LearnHub "Antigravity" Design System — single source of truth
+   --------------------------------------------------------------------------
+   Spatial / glassmorphism language: weightless floating surfaces, frosted
+   glass panels, diffused depth shadows, restrained blue accent on deep navy.
+   This file ONLY defines tokens + low-level glass/motion utilities.
+   Component restyling lives in css/antigravity.css (loaded after this file).
+   Loaded AFTER variables.css so Antigravity values win without editing it.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand / identity (dark navy + blue family, preserved) ---- */
+  --ag-bg-0: #050914;            /* page depth base — near-black navy */
+  --ag-bg-1: #0a1128;            /* deep navy wash */
+  --ag-bg-2: #0f1b3d;            /* faint navy lift for washes */
+  --ag-accent: #3b82f6;          /* primary blue */
+  --ag-accent-hover: #60a5fa;
+  --ag-accent-active: #2563eb;
+  --ag-accent-deep: #1d4ed8;
+  --ag-accent-ink: #dbeafe;      /* text on accent fills */
+  --ag-accent-soft: rgba(59, 130, 246, 0.12);  /* soft glow fill */
+
+  /* ---- Text (WCAG AA on deep navy) ---- */
+  --ag-text-1: #f1f5f9;
+  --ag-text-2: #cbd5e1;
+  --ag-text-3: #94a3b8;
+  --ag-text-muted: #64748b;
+
+  /* ---- Status ---- */
+  --ag-success: #34d399;
+  --ag-warning: #fbbf24;
+  --ag-danger: #f87171;
+  --ag-info: #22d3ee;
+
+  /* ---- Glass tokens (dark default) ---- */
+  --glass-bg: rgba(255, 255, 255, 0.035);
+  --glass-bg-strong: rgba(255, 255, 255, 0.055);
+  --glass-bg-faint: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.2);
+  --glass-blur: blur(20px) saturate(1.35);
+  --glass-blur-sm: blur(14px) saturate(1.25);
+  --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+
+  /* ---- Depth / elevation (weightless floating surfaces) ---- */
+  --elev-1: 0 1px 2px rgba(2, 6, 18, 0.5), 0 8px 24px rgba(2, 6, 18, 0.35);
+  --elev-2: 0 2px 6px rgba(2, 6, 18, 0.5), 0 16px 40px rgba(2, 6, 18, 0.45);
+  --elev-3: 0 4px 12px rgba(2, 6, 18, 0.55), 0 28px 64px rgba(2, 6, 18, 0.55);
+  --glow-accent: 0 0 0 1px rgba(59, 130, 246, 0.35), 0 8px 24px rgba(59, 130, 246, 0.28);
+
+  /* ---- Typography (single stack) ---- */
+  --ag-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ag-h-display: 1.75rem;   /* 28px page hero */
+  --ag-h-1: 1.5rem;          /* 24px */
+  --ag-h-2: 1.125rem;        /* 18px card titles */
+  --ag-h-3: 1rem;            /* 16px section titles */
+  --ag-body: 0.9375rem;      /* 15px */
+  --ag-small: 0.8125rem;     /* 13px */
+  --ag-caption: 0.75rem;     /* 12px labels */
+  --ag-micro: 0.6875rem;     /* 11px eyebrows */
+
+  /* ---- Spacing (4/8px scale) ---- */
+  --ag-1: 4px;
+  --ag-2: 8px;
+  --ag-3: 12px;
+  --ag-4: 16px;
+  --ag-5: 20px;
+  --ag-6: 24px;
+  --ag-8: 32px;
+  --ag-10: 40px;
+  --ag-12: 48px;
+
+  /* ---- Radius (soft, rounded everywhere) ---- */
+  --ag-r-sm: 8px;
+  --ag-r-md: 12px;
+  --ag-r-lg: 16px;
+  --ag-r-xl: 20px;
+  --ag-r-pill: 999px;
+
+  /* ---- Motion ---- */
+  --ease-out-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 600ms;
+
+  /* ---- Shell geometry ---- */
+  --ag-shell-gap: 12px;
+  --ag-shell-radius: 18px;
+}
+
+/* Light theme: glacier mist — cool silver-blue stage, white frost glass.
+   White translucency reads best against cool mid-tone backgrounds. */
+[data-theme="light"] {
+  --ag-bg-0: #dbe3ea;
+  --ag-bg-1: #e8edf2;
+  --ag-bg-2: #c6d1dc;
+  --ag-text-1: #0f172a;
+  --ag-text-2: #334155;
+  --ag-text-3: #64748b;
+  --ag-text-muted: #94a3b8;
+  --ag-accent: #2563eb;
+  --ag-accent-hover: #1d4ed8;
+  --ag-accent-soft: rgba(37, 99, 235, 0.1);
+
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-bg-strong: rgba(255, 255, 255, 0.78);
+  --glass-bg-faint: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(15, 23, 42, 0.09);
+  --glass-border-strong: rgba(15, 23, 42, 0.15);
+  --glass-shadow: 0 20px 40px rgba(30, 45, 65, 0.12);
+
+  --elev-1: 0 1px 2px rgba(30, 45, 65, 0.06), 0 8px 24px rgba(30, 45, 65, 0.08);
+  --elev-2: 0 2px 6px rgba(30, 45, 65, 0.07), 0 16px 40px rgba(30, 45, 65, 0.1);
+  --elev-3: 0 4px 12px rgba(30, 45, 65, 0.08), 0 28px 64px rgba(30, 45, 65, 0.14);
+  --glow-accent: 0 0 0 1px rgba(37, 99, 235, 0.3), 0 8px 24px rgba(37, 99, 235, 0.22);
+}
+
+/* ---- Bridge: map legacy variables.css tokens onto Antigravity depth ----
+   Keeps every existing component working while shifting the palette. */
+:root, [data-theme="dark"] {
+  --color-bg-primary: var(--ag-bg-0);
+  --color-bg-secondary: #0c1430;
+  --color-bg-tertiary: #131e42;
+  --color-bg-elevated: #101a38;
+  --color-text-primary: var(--ag-text-1);
+  --color-text-secondary: var(--ag-text-2);
+  --color-text-tertiary: var(--ag-text-3);
+  --color-text-muted: var(--ag-text-muted);
+  --color-border-light: rgba(255, 255, 255, 0.09);
+  --color-border-medium: rgba(255, 255, 255, 0.16);
+  --color-primary: var(--ag-accent);
+  --color-primary-hover: var(--ag-accent-hover);
+  --color-primary-light: var(--ag-accent-soft);
+  --color-sidebar-bg: rgba(12, 20, 48, 0.5);
+  --color-sidebar-border: rgba(255, 255, 255, 0.09);
+  --color-header-bg: rgba(10, 17, 40, 0.5);
+  --color-header-border: rgba(255, 255, 255, 0.09);
+  --shadow-xs: var(--elev-1);
+  --shadow-sm: var(--elev-1);
+  --shadow-md: var(--elev-2);
+  --shadow-lg: var(--elev-2);
+  --shadow-xl: var(--elev-3);
+}
+
+[data-theme="light"] {
+  --color-bg-primary: var(--ag-bg-0);
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #dde4ea;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: var(--ag-text-1);
+  --color-text-secondary: var(--ag-text-2);
+  --color-text-tertiary: var(--ag-text-3);
+  --color-sidebar-bg: rgba(255, 255, 255, 0.6);
+  --color-header-bg: rgba(255, 255, 255, 0.6);
+}
+
+/* ---- Glass primitives (apply to elevated surfaces only) ---- */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+}
+.glass-strong {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ---- Reduced motion: instant state changes only ---- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+}

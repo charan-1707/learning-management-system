@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LearnHub LMS</title>
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+  <script>
+    (function() {
+      try {
+        var user = localStorage.getItem('learnhub-user');
+        var token = localStorage.getItem('learnhub-token');
+        if (user && token) {
+          var u = JSON.parse(user);
+          if (u.role === 'admin') {
+            window.location.replace('pages/admin/dashboard.html');
+            return;
+          } else if (u.role === 'faculty') {
+            window.location.replace('pages/faculty/dashboard.html');
+            return;
+          } else if (u.role === 'student') {
+            window.location.replace('pages/student/dashboard.html');
+            return;
+          }
+        }
+      } catch (e) {}
+      window.location.replace('pages/auth/login.html');
+    })();
+  </script>
+</head>
+<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d1117;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e6edf3;">
+  <div style="text-align:center;">
+    <h2 style="font-weight:600;margin-bottom:8px;">LearnHub LMS</h2>
+    <p style="color:#8b949e;margin:0;">Redirecting to your workspace&hellip;</p>
+  </div>
+</body>
+</html>

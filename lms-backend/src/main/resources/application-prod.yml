@@ -1,0 +1,11 @@
+# Production profile: schema WITHOUT demo seeds (clean backend, per README policy).
+# Run with: java -jar ... --spring.profiles.active=prod  (plus DB_* env for the prod DB).
+spring:
+  config:
+    activate:
+      on-profile: prod
+  flyway:
+    locations: classpath:db/migration
+
+app:
+  # No demo-reset exists anymore; wipe always preserves the primary admin.

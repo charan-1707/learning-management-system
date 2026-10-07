@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Progress - LearnHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <link rel="stylesheet" href="../../css/design-system.css">
+  <link rel="stylesheet" href="../../css/antigravity.css">
+  <script src="../../js/boot.js"></script>
+</head>
+<body data-role="faculty" data-page="faculty-progress" data-title="Student Progress">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <header class="header" id="header"></header>
+  <main class="main" id="main">
+
+    <div class="page-header">
+      <div class="page-title-section"><h1>Student progress</h1><p>Track how well students perform across your courses.</p></div>
+    </div>
+
+    <section class="card" style="margin-bottom:var(--spacing-6);">
+      <div class="card-body" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+        <div class="form-group" style="margin:0;min-width:260px;flex:1;max-width:420px;"><label class="form-label" for="sp-course">Course</label>
+          <select class="form-input form-select" id="sp-course"></select></div>
+        <div id="sp-summary" style="display:flex;gap:28px;flex-wrap:wrap;"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">Class performance</h2><p class="card-subtitle">Average assessment scores by student</p></div>
+      <div class="card-body" style="padding-top:var(--spacing-4);padding-bottom:var(--spacing-5);" id="perf-list"></div>
+    </section>
+
+  </main>
+  <script src="../../js/pages/faculty/student-progress.js"></script>
+</body>
+</html>

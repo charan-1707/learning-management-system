@@ -1,0 +1,678 @@
+/* ==========================================================================
+   LearnHub "Antigravity" surface layer
+   --------------------------------------------------------------------------
+   Floating glass shell + spatial depth + restrained motion. Loaded LAST so it
+   wins over variables/global/layout/components/auth/responsive without
+   editing them (except the rainbow logo-party keyframes, removed in
+   layout.css). Only transform/opacity are animated. No markup changes needed.
+   ========================================================================== */
+
+/* ---------- 1. Spatial background — the stage the glass floats over ------
+   Layered indigo depth + faint cool breath + vignette: dark enough for glow,
+   varied enough that frosted blur is unmistakable. Static layers only. ----- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 520px at 12% -8%, rgba(72, 96, 190, 0.22), transparent 62%),
+    radial-gradient(880px 620px at 105% 108%, rgba(28, 60, 150, 0.18), transparent 60%),
+    radial-gradient(640px 420px at 82% 8%, rgba(34, 211, 238, 0.06), transparent 60%),
+    linear-gradient(180deg, #070c1b 0%, #050914 55%, #04060f 100%);
+}
+[data-theme="light"] body::before {
+  background:
+    radial-gradient(1000px 520px at 10% -8%, rgba(140, 160, 180, 0.28), transparent 62%),
+    radial-gradient(880px 620px at 105% 108%, rgba(120, 140, 160, 0.2), transparent 60%),
+    radial-gradient(640px 420px at 84% 10%, rgba(255, 255, 255, 0.6), transparent 60%),
+    linear-gradient(180deg, #e8edf2 0%, #dbe3ea 55%, #c9d4de 100%);
+}
+
+/* Film grain over the scene: blur needs texture to read as frost.
+   Static, pointer-transparent, sits below all interactive chrome. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+body {
+  font-family: var(--ag-font);
+  color: var(--color-text-primary);
+}
+
+/* ---------- Universal search palette ---------------------------------------
+   Desktop command-bar in the header; results grouped by Courses,
+   Assignments, Quizzes and People. Hidden on small screens by responsive. */
+.header-search { display: block; }
+.header-search .header-search-input { padding-left: 40px; }
+.search-results {
+  left: 0;
+  right: auto;
+  width: 400px;
+  max-width: calc(100vw - 48px);
+  max-height: 430px;
+  overflow-y: auto;
+  padding: var(--spacing-2);
+}
+.search-group {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: var(--spacing-2) var(--spacing-3) var(--spacing-1);
+}
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+.search-row:hover, .search-row.active { background-color: var(--color-bg-tertiary); }
+.search-row-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.search-row-text { display: flex; flex-direction: column; min-width: 0; }
+.search-row-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-row-sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-empty {
+  padding: var(--spacing-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+.search-hint {
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  border-top: 1px solid var(--color-border-light);
+  margin-top: var(--spacing-1);
+}
+
+/* ---------- Mobile search toggle -------------------------------------------
+   Desktop keeps the inline pill; on small screens a header icon drops the
+   same palette as a full-width bar under the header. */
+.mobile-search-btn { display: none; }
+.mobile-search { display: none; }
+@media (max-width: 1024px) {
+  .mobile-search-btn { display: flex; }
+  .mobile-search {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 12px;
+    right: 12px;
+    align-items: center;
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--elev-3);
+    padding: 8px 8px 8px 12px;
+  }
+  .mobile-search.open { display: flex; }
+  .mobile-search .header-search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .mobile-search .header-search-input:focus {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+  .mobile-search .search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* ---------- 2. Floating glass sidebar ---------------------------------- */
+.sidebar {
+  top: var(--ag-shell-gap);
+  left: var(--ag-shell-gap);
+  height: calc(100vh - (var(--ag-shell-gap) * 2));
+  border-radius: var(--ag-shell-radius);
+  background: var(--color-sidebar-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-2);
+  overflow: hidden;
+}
+.sidebar-header { border-bottom-color: var(--glass-border); }
+.sidebar-footer { border-top-color: var(--glass-border); }
+
+/* Active nav item: soft glow highlight, never a hard block fill. */
+.nav-item {
+  border-radius: var(--ag-r-md);
+  border: 1px solid transparent;
+  transition: transform var(--duration-base) var(--ease-out-smooth),
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-base) var(--ease-out-smooth),
+    border-color var(--duration-fast) ease;
+}
+.nav-item:hover {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border);
+  transform: translateX(4px);
+}
+.nav-item.active {
+  background: var(--ag-accent-soft);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: var(--ag-accent-hover);
+  box-shadow: var(--glow-accent), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+[data-theme="light"] .nav-item.active { color: var(--ag-accent-active); }
+.sidebar-user:hover { background: var(--glass-bg-strong); }
+
+/* ---------- 3. Floating glass topbar ----------------------------------- */
+.header {
+  top: var(--ag-shell-gap);
+  left: calc(var(--sidebar-width) + (var(--ag-shell-gap) * 2));
+  right: var(--ag-shell-gap);
+  border-radius: var(--ag-shell-radius);
+  background: var(--color-header-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-1);
+}
+.sidebar.collapsed ~ .header,
+.sidebar.collapsed + .header { left: calc(var(--sidebar-collapsed-width) + (var(--ag-shell-gap) * 2)); }
+body.sidebar-hidden .header { left: var(--ag-shell-gap); }
+
+.header-btn,
+.desktop-sidebar-btn,
+.mobile-menu-btn,
+.user-menu-trigger {
+  border-radius: var(--ag-r-md);
+  transition: transform var(--duration-base) var(--ease-out-smooth),
+    background-color var(--duration-fast) ease, color var(--duration-fast) ease,
+    box-shadow var(--duration-base) var(--ease-out-smooth);
+}
+.header-btn:hover,
+.desktop-sidebar-btn:hover,
+.mobile-menu-btn:hover { transform: translateY(-1px); box-shadow: var(--elev-1); }
+.header-btn:active,
+.desktop-sidebar-btn:active { transform: translateY(0) scale(0.96); }
+
+/* Glass dropdowns / menus */
+.user-menu-dropdown,
+.dropdown-menu {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--ag-r-lg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+}
+/* Dark mode: floating menus sit over busy page content, and the 5%-opacity
+   glass fill lets everything bleed through the blur so the text looks
+   washed out. Give menus a near-opaque navy fill (blur off) so content
+   stays crisp. Light mode already uses a 78%-opaque fill and is untouched. */
+:root:not([data-theme="light"]) .user-menu-dropdown,
+:root:not([data-theme="light"]) .dropdown-menu {
+  background: rgba(16, 26, 56, 0.97);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+#sidebar-tooltip {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--elev-2);
+}
+
+/* ---------- 4. Main canvas spacing for the floating shell --------------- */
+.main {
+  margin-top: calc(var(--header-height) + (var(--ag-shell-gap) * 2));
+  min-height: calc(100vh - var(--header-height) - (var(--ag-shell-gap) * 2));
+  padding: var(--ag-8);
+}
+
+/* Page transition: new content fades + rises instead of hard-cutting. */
+.lh-page-enter { animation: lh-page-in var(--duration-base) var(--ease-out-smooth) both; }
+@keyframes lh-page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- 5. Floating glass cards ------------------------------------ */
+.card,
+.stat-card,
+.course-card,
+.notification-item,
+.module-item {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--ag-r-lg);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--elev-1);
+  transition: transform var(--duration-base) var(--ease-out-smooth),
+    box-shadow var(--duration-base) var(--ease-out-smooth),
+    border-color var(--duration-fast) ease;
+}
+.card { border-radius: var(--ag-r-xl); }
+.card-header { border-bottom-color: var(--glass-border); }
+.card-footer { border-top-color: var(--glass-border); background: var(--glass-bg-faint); }
+
+.stat-card:hover,
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--elev-2);
+  border-color: var(--glass-border-strong);
+}
+.stat-card:active,
+.course-card:active { transform: translateY(-1px) scale(0.99); }
+
+/* Stat icon chips: soft tinted glass, no flat fills. */
+.stat-card-icon,
+.activity-icon,
+.notification-slot .notification-icon,
+.notification-icon {
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Welcome / hero banner: hero glass with a single restrained accent wash. */
+#welcome-banner .card,
+#admin-welcome .card {
+  background:
+    radial-gradient(560px 220px at 88% -40%, rgba(59, 130, 246, 0.18), transparent 65%),
+    var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-2);
+}
+
+/* ---------- 6. Buttons (consistent across all roles) -------------------- */
+.btn {
+  border-radius: var(--ag-r-md);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  transition: transform var(--duration-base) var(--ease-out-smooth),
+    box-shadow var(--duration-base) var(--ease-out-smooth),
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(59, 130, 246, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.btn-secondary,
+.btn-outline {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  color: var(--color-text-primary);
+}
+.btn-secondary:hover:not(:disabled),
+.btn-outline:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--elev-1);
+}
+.btn-ghost:hover:not(:disabled) { background: var(--glass-bg-strong); }
+
+/* ---------- 7. Forms: glass inputs + glowing focus rings ---------------- */
+.form-input,
+.auth-input,
+.header-search-input {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--ag-r-md);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  transition: border-color var(--duration-fast) ease,
+    box-shadow var(--duration-base) var(--ease-out-smooth),
+    background-color var(--duration-fast) ease;
+}
+.form-input:focus,
+.auth-input:focus,
+.header-search-input:focus {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22), var(--elev-1);
+  background: var(--glass-bg-strong);
+}
+
+/* ---------- 8. Tables ---------------------------------------------------- */
+.table-wrapper {
+  background: var(--glass-bg-faint);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--ag-r-lg);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--elev-1);
+  overflow-x: auto;
+}
+.table th {
+  background: var(--glass-bg-strong);
+  border-bottom: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+}
+.table td { background: transparent; border-bottom-color: var(--glass-border); }
+.table tbody tr { transition: background-color var(--duration-fast) ease; }
+.table tbody tr:hover td { background: var(--glass-bg-strong); }
+
+/* ---------- 9. Glass modals + blurred backdrop --------------------------- */
+.modal-overlay {
+  background: rgba(3, 7, 20, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+[data-theme="light"] .modal-overlay { background: rgba(15, 23, 42, 0.4); }
+.modal {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--ag-r-xl);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+  transform: scale(0.96) translateY(14px);
+  transition: transform var(--duration-base) var(--ease-out-smooth);
+}
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+.modal-header { border-bottom-color: var(--glass-border); }
+.modal-body > .modal-footer,
+.modal-footer { border-top-color: var(--glass-border); background: transparent; }
+
+/* ---------- 10. Toasts ---------------------------------------------------- */
+.toast,
+.toast-container .toast {
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid var(--glass-border-strong) !important;
+  border-radius: var(--ag-r-lg) !important;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3) !important;
+}
+
+/* ---------- 11. Tabs / badges / progress / empty states ------------------ */
+.tab { border-radius: var(--ag-r-sm) var(--ag-r-sm) 0 0; }
+.tab.active {
+  color: var(--ag-accent-hover);
+  border-bottom-color: var(--ag-accent);
+}
+[data-theme="light"] .tab.active { color: var(--ag-accent-active); }
+
+.badge {
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+}
+.progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+[data-theme="light"] .progress-bar { background: rgba(15, 23, 42, 0.08); }
+.progress-bar-fill { transition: width var(--duration-slow) var(--ease-out-smooth); }
+
+/* Empty states look intentional: soft icon chip + calm copy. */
+.empty-state { padding: var(--ag-10) var(--ag-6); }
+.empty-state-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ag-r-xl);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--elev-1);
+  color: var(--ag-text-3);
+  margin-bottom: var(--ag-4);
+}
+.empty-state-title { color: var(--color-text-primary); }
+.empty-state-message { color: var(--color-text-tertiary); }
+
+/* ---------- 12. Course / activity / notification polish ------------------- */
+/* Course detail heroes paint their own backdrop (see page renderers). */
+.activity-item,
+.material-item {
+  border-radius: var(--ag-r-md);
+  transition: background-color var(--duration-fast) ease,
+    transform var(--duration-base) var(--ease-out-smooth);
+}
+a.activity-item:hover { background: var(--glass-bg-strong); transform: translateX(3px); }
+.notification-item.unread {
+  background: var(--ag-accent-soft);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: var(--glow-accent);
+}
+.module-header { background: var(--glass-bg-strong); border-bottom: 1px solid transparent; }
+.module-header:hover { background: var(--glass-bg-strong); }
+.quiz-option {
+  background: var(--glass-bg-faint);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--ag-r-md);
+}
+.quiz-option:hover { border-color: rgba(59, 130, 246, 0.55); background: var(--ag-accent-soft); }
+.quiz-option.selected { border-color: var(--ag-accent); background: var(--ag-accent-soft); }
+.quiz-timer {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+}
+.file-upload {
+  border: 2px dashed var(--glass-border-strong);
+  border-radius: var(--ag-r-lg);
+  background: var(--glass-bg-faint);
+}
+.file-upload:hover,
+.file-upload.drag-active { border-color: var(--ag-accent); background: var(--ag-accent-soft); }
+.avatar,
+.user-avatar,
+.user-menu-avatar {
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--elev-1);
+}
+
+/* ---------- 13. Scroll-reveal layer (driven by js/utils/motion.js) --------
+   Initial state is applied via JS (.ag-reveal) so no-JS pages still show
+   content. motion.js adds .ag-in when the element scrolls into view. */
+.ag-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity var(--duration-slow) var(--ease-out-smooth),
+    transform var(--duration-slow) var(--ease-out-smooth);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.ag-reveal.ag-in { opacity: 1; transform: translateY(0); will-change: auto; }
+
+/* Stagger children of grids without per-item JS delays. */
+.ag-stagger > *:nth-child(1) { --reveal-delay: 0ms; }
+.ag-stagger > *:nth-child(2) { --reveal-delay: 70ms; }
+.ag-stagger > *:nth-child(3) { --reveal-delay: 140ms; }
+.ag-stagger > *:nth-child(4) { --reveal-delay: 210ms; }
+.ag-stagger > *:nth-child(5) { --reveal-delay: 260ms; }
+.ag-stagger > *:nth-child(n+6) { --reveal-delay: 300ms; }
+
+/* ---------- 14. Auth screens: floating glass over quiet depth ------------- */
+.auth-body { position: relative; overflow: hidden; }
+.auth-body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(760px 480px at 12% 0%, rgba(72, 96, 190, 0.2), transparent 62%),
+    radial-gradient(820px 560px at 100% 100%, rgba(28, 60, 150, 0.16), transparent 60%),
+    linear-gradient(180deg, #0a1230 0%, #070c1f 55%, #04060f 100%);
+}
+[data-theme="light"] .auth-body::before {
+  background:
+    radial-gradient(760px 480px at 12% 0%, rgba(140, 160, 180, 0.24), transparent 62%),
+    radial-gradient(820px 560px at 100% 100%, rgba(120, 140, 160, 0.16), transparent 60%),
+    linear-gradient(180deg, #e8edf2 0%, #dbe3ea 60%, #c9d4de 100%);
+}
+.auth-aside,
+.auth-main { position: relative; z-index: 1; }
+.auth-aside {
+  background: var(--glass-bg-faint);
+  border-right: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+}
+/* Restrain the legacy neon blobs: faint, slow, single-hue. */
+.auth-blob { opacity: 0.12; filter: blur(90px); }
+.auth-blob-1 { background: var(--ag-accent); }
+.auth-blob-2 { background: #2f4fae; }
+.auth-blob-3 { background: #1e3a8a; }
+
+.auth-card {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--ag-r-xl);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+  padding: var(--ag-8);
+  max-width: 440px;
+  animation: auth-float-in var(--duration-slow) var(--ease-out-smooth) both;
+}
+@keyframes auth-float-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.auth-card > * { animation: none; } /* single card entrance, not per-child */
+.auth-logo-mobile { margin-bottom: var(--ag-6); }
+.auth-submit {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.auth-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(59, 130, 246, 0.45); }
+.auth-submit:active { transform: translateY(0) scale(0.98); }
+.auth-tip-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--ag-r-lg);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--elev-1);
+}
+.auth-theme-toggle {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  box-shadow: var(--elev-1);
+}
+
+/* Subtle parallax hook: motion.js translates this layer on auth screens. */
+.ag-parallax { will-change: transform; transform: translate3d(0, var(--px, 0), 0); }
+
+/* ---------- 15. Keyboard focus: always visible ---------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--ag-accent-hover);
+  outline-offset: 2px;
+  border-radius: var(--ag-r-sm);
+}
+
+/* ---------- 16. Responsive: floating shell collapses gracefully ------------ */
+@media (max-width: 1024px) {
+  .sidebar {
+    top: 0;
+    left: 0;
+    height: 100vh;
+    border-radius: 0 var(--ag-shell-radius) var(--ag-shell-radius) 0;
+  }
+  .header { left: var(--ag-shell-gap); }
+  .main { padding: var(--ag-6); }
+}
+@media (max-width: 768px) {
+  :root { --ag-shell-gap: 8px; }
+  .main { padding: var(--ag-4); }
+  .auth-card { padding: var(--ag-6); margin: 0 var(--ag-2); }
+  .header { padding: 0 var(--ag-4); }
+}
+@media (max-width: 480px) {
+  .auth-card { border-radius: var(--ag-r-lg); padding: var(--ag-5); }
+}
+
+/* ---------- 17. Reduced motion: instant state changes only ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .lh-page-enter,
+  .auth-card { animation: none; }
+  .ag-reveal { opacity: 1; transform: none; transition: none; }
+  .ag-parallax { transform: none; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- 18. Print: drop glass, keep content ---------------------------- */
+@media print {
+  body::before, body::after { display: none; }
+  .sidebar, .header { display: none !important; }
+  .card, .stat-card, .table-wrapper {
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

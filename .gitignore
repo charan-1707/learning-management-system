@@ -1,0 +1,10 @@
+# Dev leftovers (never deploy these)
+*.log
+hi.txt
+.vscode/
+.env
+frontend.log
+
+# Backend build output + runtime uploads (belt-and-braces; lms-backend/.gitignore covers these too)
+target/
+uploads/

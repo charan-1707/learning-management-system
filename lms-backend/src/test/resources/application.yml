@@ -1,0 +1,22 @@
+# Phase 0 test profile: H2 in-memory so `mvn test` is green without MySQL.
+# Runtime (src/main) still targets MySQL learnhub per plan §3/§5.
+spring:
+  datasource:
+    url: jdbc:h2:mem:learnhub-test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    secret: test-secret-64-char-min-test-secret-64-char-min-0123456789abcdef
+    access-minutes: 60
+    refresh-days: 7

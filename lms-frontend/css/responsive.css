@@ -1,0 +1,180 @@
+@media (max-width: 1200px) {
+  .grid-cols-4 { grid-template-columns: repeat(3, 1fr); }
+  .grid-cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .grid-cols-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .header-search { display: none !important; }
+  .sidebar-toggle { display: flex !important; }
+}
+
+@media (max-width: 900px) {
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .grid-cols-4,
+  .grid-cols-3,
+  .grid-cols-2 { grid-template-columns: 1fr; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-4);
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .page-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .stat-card-value { font-size: var(--text-2xl); }
+
+  .table th:nth-child(n+5),
+  .table td:nth-child(n+5) {
+    display: none;
+  }
+
+  .course-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+  }
+
+  .course-card-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .modal { margin: var(--spacing-4); }
+  .modal-footer { flex-direction: column-reverse; }
+  .modal-footer .btn { width: 100%; }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --header-height: 56px;
+  }
+
+  .main { padding: var(--spacing-4); }
+
+  .page-title-section h1 { font-size: var(--text-xl); }
+  .page-title-section p { font-size: var(--text-sm); }
+
+  .header { padding: 0 var(--spacing-3); }
+  .header-divider { display: none; }
+  .user-menu-trigger { padding: var(--spacing-1); }
+
+  .sidebar { width: 280px; }
+  .sidebar-header { padding: 0 var(--spacing-4); }
+
+  .stat-card { padding: var(--spacing-4); }
+  .stat-card-icon { width: 40px; height: 40px; }
+  .stat-card-icon svg { width: 20px; height: 20px; }
+
+  .card-body { padding: var(--spacing-4); }
+  .card-header { padding: var(--spacing-4); }
+  .card-footer { padding: var(--spacing-3) var(--spacing-4); }
+
+  .course-card-image { height: 140px; }
+  .course-card-content { padding: var(--spacing-4); }
+
+  .activity-item { gap: var(--spacing-2); }
+  .activity-icon { width: 32px; height: 32px; }
+  .activity-icon svg { width: 16px; height: 16px; }
+
+  .notification-item { padding: var(--spacing-3); }
+  .notification-header { flex-direction: column; align-items: flex-start; gap: var(--spacing-1); }
+  .notification-footer { flex-wrap: wrap; }
+
+  .quiz-question-text { font-size: var(--text-base); }
+  .quiz-option { padding: var(--spacing-3); }
+  .quiz-option-text { font-size: var(--text-sm); }
+  .quiz-nav-dot { width: 32px; height: 32px; font-size: var(--text-xs); }
+
+  .tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 1px; }
+  .tab { white-space: nowrap; padding: var(--spacing-3) var(--spacing-4); }
+
+  .modal-header { padding: var(--spacing-4); }
+  .modal-body { padding: var(--spacing-4); }
+  .modal-footer { padding: var(--spacing-3) var(--spacing-4); }
+
+  .dropdown-menu { right: -80px; min-width: 200px; }
+}
+
+@media (max-width: 480px) {
+  .btn { padding: var(--spacing-2) var(--spacing-3); font-size: var(--text-xs); }
+  .btn-lg { padding: var(--spacing-3) var(--spacing-4); font-size: var(--text-sm); }
+
+  .stat-card-value { font-size: var(--text-xl); }
+
+  .avatar { width: 32px; height: 32px; font-size: var(--text-xs); }
+  .avatar-sm { width: 24px; height: 24px; }
+
+  .course-card-image { height: 120px; }
+  .course-card-title { font-size: var(--text-base); }
+
+  .notification-icon { width: 32px; height: 32px; }
+  .notification-icon svg { width: 16px; height: 16px; }
+
+  .quiz-timer { font-size: var(--text-base); padding: var(--spacing-1) var(--spacing-3); }
+
+  .dropdown-menu { right: -100px; }
+}
+
+@media (min-width: 1025px) {
+  .mobile-menu-btn { display: none !important; }
+  .sidebar-overlay { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .course-card,
+  .stat-card,
+  .nav-item,
+  .btn,
+  .header-btn,
+  .dropdown-item,
+  .tab,
+  .quiz-option,
+  .material-item,
+  .activity-item,
+  .notification-item,
+  .quiz-nav-dot {
+    transition: none !important;
+  }
+}
+
+@media print {
+  .sidebar,
+  .header,
+  .page-actions,
+  .modal-overlay,
+  .toast-container,
+  .btn {
+    display: none !important;
+  }
+
+  .main {
+    margin-left: 0;
+    margin-top: 0;
+    padding: 0;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+}
