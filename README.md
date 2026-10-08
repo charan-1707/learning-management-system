@@ -102,9 +102,11 @@ window.LH_API_BASE = 'https://<your-backend>.onrender.com/api';
 | `APP_MAIL_HOST/USER/PASS` | `smtp.gmail.com …` | real password-reset emails (else links only land in logs) |
 | `PORT` | *(set by Render)* | already wired — leave it |
 
-Aiven MySQL enforces TLS: download its CA certificate, add it to the backend via a
-Render Secret File, and append the SSL parameters to `APP_DB_URL`. Without this the
-backend cannot connect and the boot log will say so plainly.
+Aiven MySQL enforces TLS: its CA certificate is committed at
+`lms-backend/aiven-ca.pem` (public key material, safe in git) and the Docker
+build bakes it into a truststore automatically — just keep `sslMode=VERIFY_CA`
+in `APP_DB_URL`. If you ever move the database to a new service, replace that
+file with the new CA and redeploy.
 
 **After deploy, check:** site loads over HTTPS · login works · student/faculty/admin
 pages all load · admin broadcast reaches inboxes · a backend restart keeps all data.
