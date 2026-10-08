@@ -92,6 +92,15 @@
           showError('#register-error', (res && res.error) || 'Registration failed. Please try again.');
           return;
         }
+        if (res.token && res.user) {
+          /* Verification disabled server-side: session is already stored by
+             the API layer — go straight to the dashboard by role. */
+          var role = res.user.role;
+          window.location.href = role === 'faculty' ? '../faculty/dashboard.html'
+            : role === 'admin' ? '../admin/dashboard.html'
+            : '../student/dashboard.html';
+          return;
+        }
         /* No tokens yet: the inbox owns this address until the code proves it. */
         showOtpStep(res.email || values.email, 'A verification code is on its way.');
       }).catch(function (err) {

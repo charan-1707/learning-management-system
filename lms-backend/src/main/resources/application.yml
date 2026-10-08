@@ -64,6 +64,14 @@ app:
   bootstrap-admin-email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@learnhub.local}
   bootstrap-admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:admin123}
   bootstrap-admin-name: ${APP_BOOTSTRAP_ADMIN_NAME:System Administrator}
+  # Lockout recovery: while set, EVERY boot resets this password onto the
+  # primary admin (else the first admin found). Set it, redeploy, sign in,
+  # change the password in Profile, then DELETE it. Empty = feature off.
+  admin-recovery-password: ${APP_ADMIN_RECOVERY_PASSWORD:}
+  # Email verification gate: default true (OTP flow). Set false for closed
+  # pilots without email delivery — registration signs students straight in
+  # and login never bounces unverified accounts.
+  require-email-verification: ${APP_REQUIRE_EMAIL_VERIFICATION:true}
   # Outgoing mail: HTTPS via Brevo (APP_BREVO_API_KEY) is the production path —
   # hosts like Render blackhole outbound SMTP, so Gmail SMTP hangs and can
   # never deliver there. Legacy SMTP (SPRING_MAIL_HOST/...) still works

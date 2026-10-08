@@ -99,7 +99,10 @@ window.LH_API_BASE = 'https://<your-backend>.onrender.com/api';
 | `JWT_SECRET` | 64+ random chars | signing tokens — **required**, never use the dev default |
 | `APP_CORS_ALLOWED_ORIGINS` | `https://learnhub.vercel.app` | lets your site call the API |
 | `APP_FRONTEND_URL` | `https://learnhub.vercel.app` | links inside reset emails |
-| `APP_MAIL_HOST/USER/PASS` | `smtp.gmail.com …` | real password-reset emails (else links only land in logs) |
+| `APP_MAIL_HOST/USER/PASS` | `smtp.gmail.com …` | SMTP path — only where egress allows it (NOT Render free); prefer Brevo below |
+| `APP_BREVO_API_KEY` | `xkeysib-…` | production email (OTP + resets) over HTTPS — the only path that works on Render |
+| `APP_REQUIRE_EMAIL_VERIFICATION` | `false` | closed-pilot escape hatch: skips OTP, registration signs students straight in |
+| `APP_ADMIN_RECOVERY_PASSWORD` | temporary only | lockout recovery: resets primary admin's password on next boot — **delete right after signing in** |
 | `PORT` | *(set by Render)* | already wired — leave it |
 
 Aiven MySQL enforces TLS: its CA certificate is committed at

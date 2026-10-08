@@ -3,6 +3,7 @@ package com.learnhub.lms.auth;
 import com.learnhub.lms.admin.PlatformSettings;
 import com.learnhub.lms.common.ApiException;
 import com.learnhub.lms.security.JwtService;
+import org.springframework.beans.factory.annotation.Value;
 import com.learnhub.lms.user.Role;
 import com.learnhub.lms.user.User;
 import com.learnhub.lms.user.UserDto;
@@ -30,6 +31,13 @@ public class AuthService {
   private final RefreshService refresh;
   private final OtpService otp;
 
+  /* Pilot escape hatch (default ON = normal OTP flow): when false, email
+     ownership is not required — registration signs the student straight in
+     and login never bounces unverified accounts. For closed pilots where
+     email delivery is unavailable; admins vouch for identities instead. */
+  @Value("${app.require-email-verification:true}")
+  private boolean requireEmailVerification;
+
   public AuthService(UserRepository users, PasswordEncoder passwords, JwtService jwt,
       PlatformSettings platform, RefreshService refresh, OtpService otp) {
     this.users = users;
@@ -51,8 +59,9 @@ public class AuthService {
     }
     // Email ownership is proven by OTP before first access: correct password
     // on an unverified account answers ok:false (same soft shape as a wrong
-    // password) so the client can route to the code screen.
-    if (!user.isEmailVerified()) {
+    // password) so the client can route to the code screen. Skipped entirely
+    // when verification is disabled (closed pilot, no email delivery).
+    if (!user.isEmailVerified() && requireEmailVerification) {
       return ResponseEntity.ok(AuthResponse.unverifiedDenied());
     }
     if (platform.isEnabled("maintenanceMode", false) && user.getRole() != Role.admin) {
@@ -82,8 +91,15 @@ public class AuthService {
     user.setPasswordHash(passwords.encode(password));
     user.setRole(Role.student);
     user.setStatus(UserStatus.active);
-    user.setEmailVerified(false);
+    user.setEmailVerified(!requireEmailVerification);
     User saved = users.save(user);
+    if (!requireEmailVerification) {
+      // Closed pilot, no email delivery: skip OTP, sign straight in.
+      saved.setLastActiveAt(LocalDateTime.now());
+      users.save(saved);
+      String[] pair = refresh.issuePair(saved);
+      return ResponseEntity.ok(AuthResponse.success(pair[0], pair[1], UserDto.from(saved)));
+    }
     // No login tokens yet: the inbox owns this address until the OTP proves it.
     otp.issue(saved);
     return ResponseEntity.status(201).body(AuthResponse.pendingVerification(cleanEmail));
