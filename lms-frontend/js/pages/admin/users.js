@@ -39,11 +39,14 @@
         '</td>' +
         '<td>' + UI.statusBadge(u.status) + '</td>' +
         '<td><span class="text-sm">' + D.relative(u.lastActive) + '</span></td>' +
-        '<td>' +
+        '<td><div style="display:flex;gap:8px;flex-wrap:wrap;">' +
           (u.status === 'suspended'
             ? '<button class="btn btn-sm btn-secondary" data-toggle-status="' + u.id + '">Reactivate</button>'
             : '<button class="btn btn-sm btn-ghost" data-toggle-status="' + u.id + '">' + I.icon('lock', 14) + ' Suspend</button>') +
-        '</td>' +
+          (u.emailVerified === false
+            ? '<button class="btn btn-sm btn-primary" data-verify-email="' + u.id + '">' + I.icon('check', 14) + ' Verify email</button>'
+            : '') +
+        '</div></td>' +
       '</tr>';
     }).join('');
 
@@ -66,6 +69,32 @@
                 });
               },
               onCancel: function () { render(); }
+            }
+          );
+        });
+      });
+    });
+
+    tbody.querySelectorAll('[data-verify-email]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var uid = parseInt(btn.getAttribute('data-verify-email'), 10);
+        API.admin.users({}).then(function (users) {
+          var u = users.filter(function (x) { return x.id === uid; })[0];
+          if (!u) return;
+          LH.modal.confirm(
+            'Mark "' + u.email + '" as verified? ' + F.esc(u.name) + ' will be able to sign in without the email code.',
+            {
+              title: 'Verify email',
+              variant: 'primary',
+              confirmText: 'Verify email',
+              onConfirm: function () {
+                API.admin.verifyEmail(uid).then(function () {
+                  render();
+                  LH.toast.success('Email verified', F.esc(u.email) + ' can now sign in.');
+                }).catch(function (err) {
+                  LH.toast.error('Verify failed', (err && err.error) || 'Could not verify this email.');
+                });
+              }
             }
           );
         });

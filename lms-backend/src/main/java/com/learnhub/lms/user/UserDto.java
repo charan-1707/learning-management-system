@@ -9,7 +9,8 @@ import java.time.format.DateTimeFormatter;
  */
 public record UserDto(Long id, String name, String email, String role, String status,
     String dept, String program, String yearLabel, String title, String phone,
-    String location, String avatarUrl, LocalDateTime lastActiveAt, String joinedLabel) {
+    String location, String avatarUrl, LocalDateTime lastActiveAt, String joinedLabel,
+    boolean emailVerified) {
 
   private static final DateTimeFormatter JOINED_FMT = DateTimeFormatter.ofPattern("MMM yyyy");
 
@@ -22,6 +23,7 @@ public record UserDto(Long id, String name, String email, String role, String st
         u.getRole() == null ? null : u.getRole().name(),
         u.getStatus() == null ? null : u.getStatus().dbValue,
         u.getDept(), u.getProgram(), u.getYearLabel(), u.getTitle(), u.getPhone(),
-        u.getLocation(), u.getAvatarUrl(), u.getLastActiveAt(), joined);
+        u.getLocation(), u.getAvatarUrl(), u.getLastActiveAt(), joined,
+        u.isEmailVerified());
   }
 }

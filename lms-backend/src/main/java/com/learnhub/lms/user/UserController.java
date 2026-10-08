@@ -97,6 +97,12 @@ public class UserController {
     return service.setStatus(id, req == null ? new StatusUpdateRequest(null, true) : req);
   }
 
+  @PatchMapping("/api/users/{id}/verify-email")
+  @Operation(summary = "Manually mark email verified, skipping OTP (ADMIN, audited)")
+  public UserDto verifyEmail(@PathVariable Long id) {
+    return service.verifyEmail(id);
+  }
+
   @GetMapping("/api/students")
   @Operation(summary = "Admin student directory, derived live")
   public ResponseEntity<PageResponse<StudentRow>> students(

@@ -170,6 +170,18 @@ public class UserService {
   }
 
   @Transactional
+  public UserDto verifyEmail(Long id) {
+    authz.requireAdmin();
+    User target = findOr404(id);
+    target.setEmailVerified(true);
+    target.setUpdatedAt(LocalDateTime.now());
+    users.save(target);
+    audit("user", "Manually verified email of " + target.getName()
+        + " (" + target.getEmail() + ") — OTP bypass by admin");
+    return UserDto.from(target);
+  }
+
+  @Transactional
   public UserDto setStatus(Long id, StatusUpdateRequest req) {
     authz.requireAdmin();
     User target = findOr404(id);

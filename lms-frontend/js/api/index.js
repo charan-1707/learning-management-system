@@ -556,6 +556,7 @@ LH.resetApiBase = function () {
     },
     changeUserRole: function (id, role) { return resolve(DB.users.setRole(id, role)); },
     flipUserStatus: function (id) { return resolve(DB.users.flipStatus(id)); },
+    verifyEmail: function (id) { return resolve(DB.update('users', id, { emailVerified: true })); },
     createUser: function (data) { return API.users.create(data || {}); }
   };
 
@@ -1424,6 +1425,7 @@ LH.resetApiBase = function () {
   API.admin.wipeInstance = function () { return post('/admin/wipe', {}); };
   API.admin.changeUserRole = function (id, role) { return API.users.setRole(id, role); };
   API.admin.flipUserStatus = function (id) { return API.users.flipStatus(id); };
+  API.admin.verifyEmail = function (id) { return patch('/users/' + id + '/verify-email', {}).then(aliasUser); };
   API.admin.createUser = function (data) { return post('/users', data || {}).then(aliasUser); };
   API.admin.downloadExport = function (type) {
     var t = type || 'users';
