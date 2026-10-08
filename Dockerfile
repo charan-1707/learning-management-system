@@ -32,4 +32,7 @@ WORKDIR /app
 COPY --from=build /app/target/lms-backend-0.0.1-SNAPSHOT.jar app.jar
 COPY --from=build /tmp/truststore.jks /app/truststore.jks
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "java -Djavax.net.ssl.trustStore=/app/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit -jar app.jar --spring.profiles.active=prod"]
+# Cold-start flags for free-tier hosts (Render port-scans with a timeout and
+# our JPA metamodel build is slow on shared CPU): C1-only JIT + serial GC cut
+# startup CPU, and urandom avoids entropy stalls in containers.
+ENTRYPOINT ["sh", "-c", "java -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom -Djavax.net.ssl.trustStore=/app/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit -jar app.jar --spring.profiles.active=prod"]
