@@ -16,4 +16,4 @@
  *   for one-off debugging.
  */
 window.LH = window.LH || {};
-window.LH_API_BASE = 'http://localhost:8080/api';
+window.LH_API_BASE = 'https://learnhub-backend-wlbw.onrender.com/api';
