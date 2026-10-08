@@ -67,7 +67,10 @@
 
       if (!res || !res.ok) {
         if (res && res.unverified) {
-          window.location.href = 'register.html?verify=1&email=' + encodeURIComponent(email.value || '');
+          /* NOTE: email here is the plain string passed into submit(), not an
+             input element — read it directly so the verify page receives the
+             address and can show the OTP step (email.value is undefined). */
+          window.location.href = 'register.html?verify=1&email=' + encodeURIComponent(email || '');
           return;
         }
         if (errEl) {
