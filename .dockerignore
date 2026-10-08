@@ -1,0 +1,7 @@
+# Keep the Docker build context small (Render sends the whole repo root).
+lms-backend/target/
+lms-backend/uploads/
+lms-frontend/
+.git/
+*.log
+truststore.jks
