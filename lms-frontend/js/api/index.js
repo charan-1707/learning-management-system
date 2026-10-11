@@ -39,6 +39,36 @@ LH.API_BASE = (function () {
 })();
 LH.USE_MOCK = 0;
 
+/* Cold-start head-start: free hosts sleep when idle and the first request can
+   take a minute+ to wake them. Fire an untimed, unread health ping the moment
+   this layer loads so the backend starts waking before the first real API
+   call, and preconnect to its origin to skip a TLS handshake there. Both are
+   fire-and-forget and never affect rendering. no-cors keeps the console clean
+   (the ping's response is never read). */
+(function () {
+  var origin = '';
+  try { origin = String(LH.API_BASE || '').replace(/\/api$/, ''); } catch (e) { origin = ''; }
+  if (!origin || !/^https?:\/\//.test(origin)) return;
+  try {
+    if (typeof document !== 'undefined' && document) {
+      var head = document.head || document.getElementsByTagName('head')[0];
+      if (head) {
+        var link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = origin;
+        link.crossOrigin = 'anonymous';
+        head.appendChild(link);
+      }
+    }
+  } catch (e) { /* ignore */ }
+  try {
+    if (typeof fetch === 'function') {
+      fetch(origin + '/actuator/health', { method: 'GET', mode: 'no-cors', credentials: 'omit', keepalive: true })
+        .catch(function () { /* warming only */ });
+    }
+  } catch (e) { /* ignore */ }
+})();
+
 /* One-click escape hatch for a stale saved API server (see above). */
 LH.resetApiBase = function () {
   try { localStorage.removeItem('learnhub-api'); } catch (e) { /* ignore */ }
@@ -853,8 +883,10 @@ LH.resetApiBase = function () {
      (enrollments ×3, progress ×2 per course, notifications ×3). Identical
      in-flight GETs share one promise, and results are reused briefly so
      rapid refreshes / parallel sections reuse them instead of storming the
-     backend. Any mutation clears the cache so later reads stay fresh. */
-  var GET_TTL_MS = 8000;
+     backend. Any mutation clears the cache so later reads stay fresh. 60s keeps
+   tab switches, back-navigation and bell re-renders instant on a warm
+   backend; mutations still clear it, so writes are never stale. */
+  var GET_TTL_MS = 60000;
   var getCache = {};
   function clearGetCache() { getCache = {}; }
   function cachedGet(path) {
