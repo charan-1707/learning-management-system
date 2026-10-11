@@ -101,6 +101,19 @@
             : '../student/dashboard.html';
           return;
         }
+        if (res.approvalRequired) {
+          /* Admin-approval mode: no code is coming. Tell the student an admin
+             will approve the request, then send them to sign in to try again
+             after approval. */
+          LH.modal.alert(
+            'Your account request has been sent. An admin will approve it shortly — ' +
+            'you will be able to sign in with this email and password once approved.',
+            { title: 'Request received' }
+          ).then(function () {
+            window.location.href = 'login.html';
+          });
+          return;
+        }
         /* No tokens yet: the inbox owns this address until the code proves it. */
         showOtpStep(res.email || values.email, 'A verification code is on its way.');
       }).catch(function (err) {

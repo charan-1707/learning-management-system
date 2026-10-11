@@ -19,7 +19,10 @@
     var list = await API.admin.users({ query: q, role: roleF || 'all' });
     if (statusF) list = list.filter(function (u) { return u.status === statusF; });
 
-    $('#user-count').textContent = 'Showing ' + list.length + ' of ' + (await API.admin.users({})).length + ' accounts';
+    var all = await API.admin.users({});
+    var pending = all.filter(function (u) { return u.emailVerified === false; }).length;
+    $('#user-count').textContent = 'Showing ' + list.length + ' of ' + all.length + ' accounts'
+      + (pending ? ' · ' + pending + ' awaiting approval' : '');
 
     if (!list.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="padding:32px;">' + UI.emptyState('users', 'No users found', 'Try adjusting your filters.') + '</td></tr>';
@@ -29,7 +32,9 @@
     tbody.innerHTML = list.map(function (u) {
       return '<tr>' +
         '<td><div class="avatar-cell">' + UI.avatar(u.name, 'sm') + '<div><div style="font-weight:600;color:var(--color-text-primary);font-size:13.5px;">' + F.esc(u.name) + '</div>' +
-          '<div style="font-size:12px;color:var(--color-text-muted);">' + F.esc(u.email) + '</div></div></div></td>' +
+          '<div style="font-size:12px;color:var(--color-text-muted);">' + F.esc(u.email) + '</div>' +
+          (u.emailVerified === false ? '<div style="margin-top:4px;">' + UI.badge('Pending approval', 'warning') + '</div>' : '') +
+          '</div></div></td>' +
         '<td>' +
           '<select class="form-input form-select" data-role-select="' + u.id + '" style="width:auto;height:32px;padding:2px 24px 2px 8px;font-size:12px;">' +
             '<option value="student"' + (u.role === 'student' ? ' selected' : '') + '>Student</option>' +

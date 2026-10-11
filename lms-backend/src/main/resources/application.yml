@@ -72,6 +72,12 @@ app:
   # pilots without email delivery — registration signs students straight in
   # and login never bounces unverified accounts.
   require-email-verification: ${APP_REQUIRE_EMAIL_VERIFICATION:true}
+  # Admin-approval mode: default false. Applies ONLY when email verification
+  # above is off. Registration parks the account (no OTP, no session) and the
+  # UI shows an "admin will approve" notice; the admin Verify button in Users
+  # is the sole gate, and pending logins get an approval notice instead of
+  # the code screen. Needs APP_REQUIRE_ADMIN_APPROVAL=true.
+  require-admin-approval: ${APP_REQUIRE_ADMIN_APPROVAL:false}
   # Outgoing mail: HTTPS via Brevo (APP_BREVO_API_KEY) is the production path —
   # hosts like Render blackhole outbound SMTP, so Gmail SMTP hangs and can
   # never deliver there. Legacy SMTP (SPRING_MAIL_HOST/...) still works

@@ -67,6 +67,16 @@
 
       if (!res || !res.ok) {
         if (res && res.unverified) {
+          if (res.approvalRequired) {
+            /* Admin-approval mode: no code is coming, so stay put and say so
+               instead of routing to the OTP screen. */
+            LH.modal.alert(
+              'Your account is awaiting admin approval. ' +
+              'You will be able to sign in with this email and password once an admin approves your request.',
+              { title: 'Pending approval' }
+            );
+            return;
+          }
           /* NOTE: email here is the plain string passed into submit(), not an
              input element — read it directly so the verify page receives the
              address and can show the OTP step (email.value is undefined). */

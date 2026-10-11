@@ -11,29 +11,34 @@ import com.learnhub.lms.user.UserDto;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AuthResponse(boolean ok, String token, String refreshToken, UserDto user,
-    Boolean suspended, Boolean unverified, String email) {
+    Boolean suspended, Boolean unverified, String email, Boolean approvalRequired) {
 
   public static AuthResponse success(String token, UserDto user) {
-    return new AuthResponse(true, token, null, user, null, null, null);
+    return new AuthResponse(true, token, null, user, null, null, null, null);
   }
 
   public static AuthResponse success(String token, String refreshToken, UserDto user) {
-    return new AuthResponse(true, token, refreshToken, user, null, null, null);
+    return new AuthResponse(true, token, refreshToken, user, null, null, null, null);
   }
 
   public static AuthResponse failed() {
-    return new AuthResponse(false, null, null, null, null, null, null);
+    return new AuthResponse(false, null, null, null, null, null, null, null);
   }
 
   public static AuthResponse suspendedDenied() {
-    return new AuthResponse(false, null, null, null, true, null, null);
+    return new AuthResponse(false, null, null, null, true, null, null, null);
   }
 
-  public static AuthResponse unverifiedDenied() {
-    return new AuthResponse(false, null, null, null, null, true, null);
+  public static AuthResponse unverifiedDenied(boolean approvalRequired) {
+    return new AuthResponse(false, null, null, null, null, true, null,
+        approvalRequired ? true : null);
   }
 
   public static AuthResponse pendingVerification(String email) {
-    return new AuthResponse(true, null, null, null, null, null, email);
+    return new AuthResponse(true, null, null, null, null, null, email, null);
+  }
+
+  public static AuthResponse pendingApproval(String email) {
+    return new AuthResponse(true, null, null, null, null, null, email, true);
   }
 }
