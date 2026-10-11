@@ -38,11 +38,11 @@ public class AuthService {
   @Value("${app.require-email-verification:true}")
   private boolean requireEmailVerification;
 
-  /* Admin-approval mode (default OFF): applies only when email verification
-     is off. Registration parks the account unverified with no OTP and no
-     session; the admin's Verify button is the sole gate. Login of a pending
-     account answers unverified+approvalRequired so the UI shows an "awaiting
-     approval" notice instead of the code screen. */
+  /* Admin-approval mode (default OFF): independent of the email-verification
+     flag. When on, registration parks the account unverified with no OTP and
+     no session; the admin's Verify button is the sole gate. Login of a
+     pending account answers unverified+approvalRequired so the UI shows an
+     "awaiting approval" notice instead of the code screen. */
   @Value("${app.require-admin-approval:false}")
   private boolean requireAdminApproval;
 
@@ -65,18 +65,16 @@ public class AuthService {
     if (user.getStatus() == UserStatus.suspended) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).body(AuthResponse.suspendedDenied());
     }
-    // Email ownership is proven by OTP before first access: correct password
-    // on an unverified account answers ok:false (same soft shape as a wrong
-    // password) so the client can route to the code screen. Skipped entirely
-    // when verification is disabled (closed pilot, no email delivery). In
-    // admin-approval mode the denial carries approvalRequired so the UI shows
-    // an "awaiting approval" notice instead of the code screen.
+    // Unverified account with the correct password: in admin-approval mode
+    // the denial carries approvalRequired so the UI shows an "awaiting
+    // approval" notice instead of the code screen; in OTP mode it routes to
+    // the code screen; with verification off it passes straight through.
     if (!user.isEmailVerified()) {
-      if (requireEmailVerification) {
-        return ResponseEntity.ok(AuthResponse.unverifiedDenied(false));
-      }
       if (requireAdminApproval) {
         return ResponseEntity.ok(AuthResponse.unverifiedDenied(true));
+      }
+      if (requireEmailVerification) {
+        return ResponseEntity.ok(AuthResponse.unverifiedDenied(false));
       }
     }
     if (platform.isEnabled("maintenanceMode", false) && user.getRole() != Role.admin) {
@@ -106,7 +104,7 @@ public class AuthService {
     user.setPasswordHash(passwords.encode(password));
     user.setRole(Role.student);
     user.setStatus(UserStatus.active);
-    boolean approvalMode = !requireEmailVerification && requireAdminApproval;
+    boolean approvalMode = requireAdminApproval;
     user.setEmailVerified(!requireEmailVerification && !approvalMode);
     User saved = users.save(user);
     if (approvalMode) {
