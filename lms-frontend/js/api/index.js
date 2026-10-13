@@ -1,11 +1,16 @@
 window.LH = window.LH || {};
 
 /* Single-mode build (25 Sep 2026): the frontend always talks to the live Spring
-   Boot backend. Backend resolution: ?api=<base-url> override (remembered),
-   else window.LH_API_BASE from js/config.js (the deploy pin — edit that one
-   line when deploying), else a remembered value, else localhost default for
-   local dev, else same host on :8080 (same-WiFi phones/laptops and any
-   remote host serving the frontend). */
+   Boot backend. Backend resolution order:
+   1. ?api=<base-url> explicit override (remembered) — always wins.
+   2. Remembered value from an earlier ?api= visit.
+   3. Localhost page -> localhost backend, ALWAYS (even when js/config.js pins
+      production). Each browser origin (localhost vs 127.0.0.1 vs LAN IP vs
+      vercel.app) keeps its own storage; falling back to the production pin
+      here silently switched backends mid-session and killed logins.
+   4. Same-WiFi/LAN page -> same host on :8080 (phones/laptops).
+   5. Public host -> window.LH_API_BASE from js/config.js (the deploy pin),
+      else same host on :8080 as a last resort. */
 LH.API_BASE = (function () {
   var base = 'http://localhost:8080/api';
   try {
@@ -24,14 +29,21 @@ LH.API_BASE = (function () {
         return base;
       }
     }
-    try {
-      if (window.LH_API_BASE) return String(window.LH_API_BASE).replace(/\/$/, '');
-    } catch (e2) { /* ignore */ }
     var saved = null;
     try { saved = localStorage.getItem('learnhub-api'); } catch (e) { /* ignore */ }
     if (saved) return saved;
     var host = window.location.hostname || '';
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+      return 'http://localhost:8080/api';
+    }
+    if (host && (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) ||
+        host.indexOf('.') === -1 || /\.local$/.test(host))) {
+      return window.location.protocol + '//' + host + ':8080/api';
+    }
+    try {
+      if (window.LH_API_BASE) return String(window.LH_API_BASE).replace(/\/$/, '');
+    } catch (e2) { /* ignore */ }
+    if (host) {
       return window.location.protocol + '//' + host + ':8080/api';
     }
   } catch (e) { /* non-browser harness */ }
