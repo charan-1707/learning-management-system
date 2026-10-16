@@ -41,8 +41,16 @@ public class LessonProgress {
   @Column(name = "completed_at")
   private LocalDateTime completedAt;
 
-  @Column(name = "created_at", updatable = false)
+  /* First touch doubles as the engagement-clock start (dwell is measured
+     from createdAt). Updatable (not insert-only) so tests can time-travel
+     rows instead of sleeping through dwell windows; nothing else updates it. */
+  @Column(name = "created_at")
   private LocalDateTime createdAt;
+
+  /* Best video watch percentage seen (0-100, null until the first heartbeat).
+     Only enforced for directly-playable video files; see dwellSeconds. */
+  @Column(name = "watch_pct")
+  private Integer watchPct;
 
   public Long getId() { return id; }
   public void setId(Long id) { this.id = id; }
@@ -61,4 +69,6 @@ public class LessonProgress {
 
   public LocalDateTime getCreatedAt() { return createdAt; }
   public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+  public Integer getWatchPct() { return watchPct; }
+  public void setWatchPct(Integer watchPct) { this.watchPct = watchPct; }
 }

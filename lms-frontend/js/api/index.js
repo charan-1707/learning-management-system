@@ -238,7 +238,11 @@ LH.resetApiBase = function () {
     update: function (id, patch) { return resolve(DB.lessons.update(id, patch)); },
     remove: function (id) { return resolve(DB.lessons.remove(id)); },
     reorder: function (moduleId, orderedIds) { return resolve(DB.lessons.reorder(moduleId, orderedIds)); },
-    markComplete: function (studentId, lessonId) { return resolve(DB.markLessonComplete(studentId, lessonId)); }
+    markComplete: function (studentId, lessonId) { return resolve(DB.markLessonComplete(studentId, lessonId)); },
+    markViewed: function (studentId, lessonId) { return resolve({ ok: true }); },
+    watchProgress: function (studentId, lessonId, positionSec, durationSec) {
+      return resolve({ ok: true, watchPct: null });
+    }
   };
 
   /* ------------------------------ Enrollments ------------------------------ */
@@ -1170,6 +1174,12 @@ LH.resetApiBase = function () {
   };
   API.lessons.markComplete = function (studentId, lessonId) {
     return post('/lessons/' + lessonId + '/complete', {});
+  };
+  API.lessons.markViewed = function (studentId, lessonId) {
+    return post('/lessons/' + lessonId + '/viewed', {});
+  };
+  API.lessons.watchProgress = function (studentId, lessonId, positionSec, durationSec) {
+    return post('/lessons/' + lessonId + '/watch', { positionSec: positionSec, durationSec: durationSec });
   };
 
   /* ------------------------------ Enrollments ------------------------------ */

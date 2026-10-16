@@ -218,23 +218,218 @@
       '</div>';
   }
 
+  /* ------------------------------ engagement gate ------------------------------
+     Anti-gaming completion: completing requires opening the material first
+     (first touch starts a server-side dwell clock) plus a per-type minimum
+     dwell; directly-playable video files additionally require 80% watched via
+     player heartbeats. Thresholds MUST mirror dwellSeconds()/WATCH_PCT_
+     REQUIRED in EnrollmentService — the backend enforces, this is display.
+     Engine state lives in the `engage` map (keyed by lesson) so countdowns
+     survive materials re-renders; the DOM is repainted, never trusted. */
+
+  var DWELL_SEC = { link: 30, pdf: 60, video: 60, def: 60 };
+  var WATCH_PCT_REQUIRED = 80;
+  var HEARTBEAT_SEC = 10;
+
+  var engage = {};
+  var engageMeta = {};
+
+  function isDirectVideoFile(url) {
+    return !!url && /\.(mp4|webm|ogg|ogv|mov|m4v)([?#].*)?$/i.test(url);
+  }
+
+  function dwellFor(type, fileUrl) {
+    if (type === 'link') return DWELL_SEC.link;
+    if (type === 'video' && !isDirectVideoFile(fileUrl)) return DWELL_SEC.pdf;
+    if (type === 'video') return 30; /* watch gate carries the weight; floor only */
+    if (type === 'pdf') return DWELL_SEC.pdf;
+    return DWELL_SEC.def;
+  }
+
+  function needsWatch(meta) {
+    return meta && meta.type === 'video' && isDirectVideoFile(meta.file);
+  }
+
+  function engageSlotHtml(id) {
+    var st = engage[id];
+    if (!st) {
+      return '<button class="btn btn-sm btn-primary" data-engage-start="' + F.esc(id) + '" ' +
+        'title="Open the material, wait out the timer, then complete">Start</button>';
+    }
+    if (st.ready) {
+      return '<button class="btn btn-sm btn-primary" data-complete-lesson="' + F.esc(id) + '">Mark complete</button>';
+    }
+    if (needsWatch(st) && st.remainingMs <= 0 && !st.videoReady) {
+      return '<button class="btn btn-sm btn-secondary" disabled ' +
+        'title="Watch at least ' + WATCH_PCT_REQUIRED + '% of the video">Watch ' + (st.watchPct || 0) + '%</button>';
+    }
+    var secs = Math.max(1, Math.ceil((st.remainingMs || 0) / 1000));
+    return '<button class="btn btn-sm btn-secondary" disabled ' +
+      'title="Spend a little more time with the material first">Wait ' + secs + 's</button>';
+  }
+
+  function paintEngage(id) {
+    var slot = null;
+    try { slot = document.querySelector('[data-engage-slot="' + id + '"]'); } catch (e) { return; }
+    if (slot) slot.innerHTML = engageSlotHtml(id);
+  }
+
+  function refreshReady(id) {
+    var st = engage[id];
+    if (!st) return;
+    st.ready = st.remainingMs <= 0 && (!needsWatch(st) || st.videoReady);
+    if (st.ready && st.timer) {
+      try { clearInterval(st.timer); } catch (e) { /* ignore */ }
+      st.timer = null;
+    }
+  }
+
+  function clearEngage(id) {
+    var st = engage[id];
+    if (st && st.timer) { try { clearInterval(st.timer); } catch (e) { /* ignore */ } }
+    delete engage[id];
+  }
+
+  function armTick(id) {
+    var st = engage[id];
+    if (!st) return;
+    if (st.timer) { try { clearInterval(st.timer); } catch (e) { /* ignore */ } st.timer = null; }
+    if (typeof document !== 'undefined' && document.hidden) return; /* visibility handler resumes */
+    st.timer = setInterval(function () { onTick(id); }, 1000);
+  }
+
+  function onTick(id) {
+    var st = engage[id];
+    if (!st || st.deadlineMs == null) return;
+    st.remainingMs = Math.max(0, st.deadlineMs - Date.now());
+    if (st.remainingMs <= 0 && st.timer) {
+      try { clearInterval(st.timer); } catch (e) { /* ignore */ }
+      st.timer = null;
+    }
+    refreshReady(id);
+    paintEngage(id);
+  }
+
+  function startEngage(id) {
+    var meta = engageMeta[id] || { type: null, file: null };
+    var cur = engage[id];
+    if (cur && cur.ready) return;
+    var threshold = dwellFor(meta.type, meta.file);
+    var st = engage[id] = { type: meta.type, file: meta.file, thresholdSec: threshold,
+      remainingMs: threshold * 1000, deadlineMs: Date.now() + threshold * 1000,
+      timer: null, ready: false, watchPct: 0, videoReady: false, lastBeat: 0 };
+    paintEngage(id);
+    armTick(id);
+    LH.api.lessons.markViewed(uid(), id).then(function (r) {
+      var cur2 = engage[id];
+      if (!cur2 || cur2.ready) return;
+      var required = (r && r.requiredSec != null) ? r.requiredSec : dwellFor(meta.type, meta.file);
+      var elapsed = (r && r.elapsedSec != null) ? r.elapsedSec : 0;
+      cur2.thresholdSec = required;
+      cur2.remainingMs = Math.max(0, (required - elapsed) * 1000);
+      cur2.deadlineMs = Date.now() + cur2.remainingMs;
+      var wpct = (r && r.watchPct != null) ? r.watchPct : 0;
+      cur2.watchPct = Math.max(cur2.watchPct, wpct);
+      if (cur2.watchPct >= WATCH_PCT_REQUIRED) cur2.videoReady = true;
+      refreshReady(id);
+      armTick(id);
+      paintEngage(id);
+      updateWatchLabel(id);
+    }).catch(function (err) {
+      delete engage[id];
+      paintEngage(id);
+      LH.toast.error('Could not start', (err && err.error) || 'Progress tracking failed.');
+    });
+  }
+
+  function updateWatchLabel(id) {
+    var label = null;
+    try { label = document.querySelector('[data-watch-label="' + id + '"]'); } catch (e) { return; }
+    if (!label) return;
+    var st = engage[id] || {};
+    var pct = st.watchPct || 0;
+    label.textContent = st.videoReady
+      ? 'Watched ' + pct + '% — done, you can complete this lesson'
+      : 'Watched ' + pct + '% — ' + WATCH_PCT_REQUIRED + '% unlocks completion';
+  }
+
+  function sendHeartbeat(id, pos, dur, force) {
+    var st = engage[id];
+    if (!st) return;
+    if (!force && Date.now() - (st.lastBeat || 0) < HEARTBEAT_SEC * 1000) return;
+    st.lastBeat = Date.now();
+    LH.api.lessons.watchProgress(uid(), id, Math.floor(pos), Math.floor(dur)).then(function (r) {
+      var cur = engage[id];
+      if (!cur) return;
+      var serverPct = (r && r.watchPct != null) ? r.watchPct : 0;
+      cur.watchPct = Math.max(cur.watchPct || 0, serverPct);
+      if (cur.watchPct >= WATCH_PCT_REQUIRED) cur.videoReady = true;
+      refreshReady(id);
+      paintEngage(id);
+      updateWatchLabel(id);
+    }).catch(function () { /* next beat retries */ });
+  }
+
+  function onVideoPlay(id) {
+    if (!engage[id]) startEngage(id);
+    updateWatchLabel(id);
+  }
+
+  function onVideoTime(id, v) {
+    var dur = v.duration, pos = v.currentTime;
+    if (!isFinite(dur) || dur <= 0 || pos < 0) return;
+    var pct = Math.round(Math.min(100, pos * 100 / dur));
+    var st = engage[id];
+    if (!st) { startEngage(id); return; }
+    var crossed = !st.videoReady && pct >= WATCH_PCT_REQUIRED;
+    st.watchPct = Math.max(st.watchPct || 0, pct);
+    if (crossed) st.videoReady = true;
+    sendHeartbeat(id, pos, dur, crossed);
+    if (crossed) { refreshReady(id); paintEngage(id); updateWatchLabel(id); }
+    else updateWatchLabel(id);
+  }
+
+  function onVideoEnded(id, v) {
+    var dur = v.duration;
+    if (!isFinite(dur) || dur <= 0) return;
+    var st = engage[id];
+    if (st) st.lastBeat = 0;
+    sendHeartbeat(id, dur, dur, true);
+  }
+
   function lessonRow(l, doneIds) {
     var done = !!doneIds[l.id];
     var file = null;
     try { file = LH.api.fileUrl(l.fileUrl); } catch (e) { file = null; }
+    engageMeta[l.id] = { type: l.type || null, file: file || l.fileUrl || null };
     var openBtn = file
-      ? '<a class="btn btn-sm btn-secondary" href="' + F.esc(file) + '" target="_blank" rel="noopener">Open</a>'
+      ? '<a class="btn btn-sm btn-secondary" data-open-lesson="' + F.esc(l.id) + '" href="' + F.esc(file) + '" target="_blank" rel="noopener">Open</a>'
       : '';
-    var statusEl = done
-      ? '<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--color-success);">' + I.icon('checkCircle', 15) + ' Completed</span>'
-      : '<button class="material-action" title="Mark complete" data-complete-lesson="' + F.esc(l.id) + '" style="border-color:var(--color-primary);color:var(--color-primary);">' + I.icon('check', 15) + '</button>';
+    var directVideo = !done && l.type === 'video' && isDirectVideoFile(file || l.fileUrl);
+    var player = '';
+    if (directVideo) {
+      player = '<div data-video-wrap="' + F.esc(l.id) + '" style="display:none;margin-top:10px;">' +
+        '<video controls preload="metadata" data-video-player="' + F.esc(l.id) + '" src="' + F.esc(file) + '" style="width:100%;max-height:320px;border-radius:8px;background:#000;"></video>' +
+        '<div style="font-size:12px;color:var(--color-text-tertiary);margin-top:4px;" data-watch-label="' + F.esc(l.id) + '">Watch at least ' + WATCH_PCT_REQUIRED + '% to unlock completion</div>' +
+      '</div>';
+    }
+    var statusEl;
+    if (done) {
+      statusEl = '<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--color-success);">' + I.icon('checkCircle', 15) + ' Completed</span>';
+    } else {
+      var watchToggle = directVideo
+        ? '<button class="btn btn-sm btn-ghost" data-video-toggle="' + F.esc(l.id) + '">' + I.icon('play', 14) + ' Watch</button>'
+        : '';
+      statusEl = '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">' + watchToggle +
+        '<span data-engage-slot="' + F.esc(l.id) + '">' + engageSlotHtml(l.id) + '</span></div>';
+    }
     return '<div class="material-item">' +
       UI.materialIcon(l.type) +
       '<div class="material-info"><div class="material-name">' + F.esc(l.title) + '</div>' +
       '<div class="material-meta"><span>' + tabContentMarkup(l.type) + '</span>' +
       (l.size ? '<span>' + F.fileSize(l.size) + '</span>' : '') +
       (l.meta ? '<span>' + F.esc(l.meta) + '</span>' : '') +
-      '</div></div>' +
+      '</div>' + player + '</div>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">' + openBtn + statusEl + '</div>' +
     '</div>';
   }
@@ -274,6 +469,15 @@
       '<div class="card-body">' + modules +
       '<div style="text-align:center;margin-top:8px;"><button class="btn btn-sm btn-ghost" id="expand-all">Expand all</button></div>' +
       '</div>';
+
+    /* Bind inline video players (play/timeupdate/ended do not bubble, so
+       delegation cannot be used — bind after every render). */
+    el.querySelectorAll('video[data-video-player]').forEach(function (v) {
+      var id = v.getAttribute('data-video-player');
+      v.addEventListener('play', function () { onVideoPlay(id); });
+      v.addEventListener('timeupdate', function () { onVideoTime(id, v); });
+      v.addEventListener('ended', function () { onVideoEnded(id, v); });
+    });
   }
 
   async function renderAssignments() {
@@ -552,12 +756,65 @@ async function renderGrades() {
       }
     });
 
+    /* Engagement gate: Start records the view + starts the dwell clock. */
+    document.addEventListener('click', function (e) {
+      var start = e.target.closest('[data-engage-start]');
+      if (start) {
+        startEngage(start.getAttribute('data-engage-start'));
+        return;
+      }
+      /* Opening the file counts as opening the material: start the clock
+         too, without blocking navigation. */
+      var open = e.target.closest('[data-open-lesson]');
+      if (open) {
+        startEngage(open.getAttribute('data-open-lesson'));
+        return;
+      }
+      /* Inline video reveal; first reveal also starts the clock. */
+      var toggle = e.target.closest('[data-video-toggle]');
+      if (toggle) {
+        var vid = toggle.getAttribute('data-video-toggle');
+        var wrap = null;
+        try { wrap = document.querySelector('[data-video-wrap="' + vid + '"]'); } catch (err) { wrap = null; }
+        if (wrap) {
+          var showing = wrap.style.display !== 'none';
+          wrap.style.display = showing ? 'none' : '';
+          if (!showing) startEngage(vid);
+        }
+      }
+    });
+
+    /* Background tabs must not count toward dwell: pause every countdown
+       while hidden, resume on return. */
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        Object.keys(engage).forEach(function (id) {
+          var st = engage[id];
+          if (st && st.timer) {
+            st.remainingMs = st.deadlineMs ? Math.max(0, st.deadlineMs - Date.now()) : st.remainingMs;
+            try { clearInterval(st.timer); } catch (e) { /* ignore */ }
+            st.timer = null;
+            paintEngage(id);
+          }
+        });
+      } else {
+        Object.keys(engage).forEach(function (id) {
+          var st = engage[id];
+          if (st && !st.ready && !st.timer) {
+            st.deadlineMs = Date.now() + st.remainingMs;
+            armTick(id);
+          }
+        });
+      }
+    });
+
     /* Mark lessons complete */
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-complete-lesson]');
       if (!btn) return;
       var lessonId = btn.getAttribute('data-complete-lesson');
       LH.api.lessons.markComplete(uid(), lessonId).then(function () {
+        clearEngage(lessonId);
         LH.toast.success('Lesson completed', 'Your progress has been updated.');
         return refreshState();
       }).then(function () {

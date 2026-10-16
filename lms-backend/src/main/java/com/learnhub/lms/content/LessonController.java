@@ -73,8 +73,21 @@ public class LessonController {
   }
 
   @PostMapping("/api/lessons/{id}/complete")
-  @Operation(summary = "Mark complete, idempotent (self, must be enrolled)")
+  @Operation(summary = "Mark complete, idempotent (self, must be enrolled; gated by open+dwell, video files also by 80% watched)")
   public Map<String, Object> complete(@PathVariable String id) {
     return enrollments.completeLesson(id);
+  }
+
+  @PostMapping("/api/lessons/{id}/viewed")
+  @Operation(summary = "Record first view, starts the dwell clock (self, must be enrolled)")
+  public Map<String, Object> viewed(@PathVariable String id) {
+    return enrollments.markViewed(id);
+  }
+
+  @PostMapping("/api/lessons/{id}/watch")
+  @Operation(summary = "Video watch heartbeat, keeps the max pct (self, must be enrolled)")
+  public Map<String, Object> watch(@PathVariable String id,
+      @Valid @RequestBody WatchRequest req) {
+    return enrollments.recordWatch(id, req);
   }
 }

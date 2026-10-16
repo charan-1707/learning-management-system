@@ -1,5 +1,7 @@
 package com.learnhub.lms;
 
+import com.learnhub.lms.enrollment.LessonProgress;
+import com.learnhub.lms.enrollment.LessonProgressRepository;
 import com.learnhub.lms.security.JwtService;
 import com.learnhub.lms.user.Role;
 import com.learnhub.lms.user.User;
@@ -14,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,17 +39,20 @@ class Phase34CoursesTest {
   @Autowired UserRepository users;
   @Autowired PasswordEncoder passwords;
   @Autowired JwtService jwt;
+  @Autowired LessonProgressRepository progressRows;
 
   private String facultyTok;
   private String otherFacultyTok;
   private String studentTok;
   private String adminTok;
+  private User studentUser;
 
   @BeforeEach
   void seed() {
     facultyTok = token(mk("p34-owner", Role.faculty));
     otherFacultyTok = token(mk("p34-other", Role.faculty));
-    studentTok = token(mk("p34-student", Role.student));
+    studentUser = mk("p34-student", Role.student);
+    studentTok = token(studentUser);
     adminTok = token(mk("p34-admin", Role.admin));
   }
 
@@ -99,6 +106,30 @@ class Phase34CoursesTest {
         .andExpect(status().isCreated())
         .andReturn();
     return r.getResponse().getContentAsString().split("\"id\":\"")[1].split("\"")[0];
+  }
+
+  private String addVideoLesson(String tok, String moduleId, String title, String fileUrl) throws Exception {
+    MvcResult r = mvc.perform(post("/api/modules/" + moduleId + "/lessons")
+            .header("Authorization", "Bearer " + tok)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"title\":\"" + title + "\",\"type\":\"video\",\"fileUrl\":\"" + fileUrl + "\"}"))
+        .andExpect(status().isCreated())
+        .andReturn();
+    return r.getResponse().getContentAsString().split("\"id\":\"")[1].split("\"")[0];
+  }
+
+  /**
+   * Honest time-travel: record a view, then backdate the row so the dwell
+   * gate passes without sleeping through real seconds in the suite.
+   */
+  private void viewedAged(String tok, String lessonId, int secondsAgo) throws Exception {
+    mvc.perform(post("/api/lessons/" + lessonId + "/viewed")
+            .header("Authorization", "Bearer " + tok))
+        .andExpect(status().isOk());
+    LessonProgress row = progressRows
+        .findByStudent_IdAndLesson_Id(studentUser.getId(), lessonId).orElseThrow();
+    row.setCreatedAt(LocalDateTime.now().minusSeconds(secondsAgo));
+    progressRows.saveAndFlush(row);
   }
 
   @Test
@@ -187,6 +218,7 @@ class Phase34CoursesTest {
     mvc.perform(post("/api/courses/" + id + "/enroll")
             .header("Authorization", "Bearer " + studentTok))
         .andExpect(status().isCreated());
+    viewedAged(studentTok, l, 61);
     mvc.perform(post("/api/lessons/" + l + "/complete")
             .header("Authorization", "Bearer " + studentTok))
         .andExpect(status().isOk());
@@ -258,6 +290,8 @@ class Phase34CoursesTest {
             .header("Authorization", "Bearer " + studentTok))
         .andExpect(status().isCreated());
 
+    viewedAged(studentTok, l1, 61);
+    viewedAged(studentTok, l2, 61);
     mvc.perform(post("/api/lessons/" + l1 + "/complete")
             .header("Authorization", "Bearer " + studentTok))
         .andExpect(status().isOk())
@@ -285,6 +319,69 @@ class Phase34CoursesTest {
             .header("Authorization", "Bearer " + studentTok))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[?(@.course.id=='" + id + "')].enrollment.progressPercent").value(50));
+  }
+
+  @Test
+  void completeWithoutViewIsRejected() throws Exception {
+    String id = createCourse(facultyTok, "Ungated " + System.nanoTime());
+    String m = addModule(facultyTok, id, "M");
+    String l = addLesson(facultyTok, m, "L");
+    publish(facultyTok, id);
+    mvc.perform(post("/api/courses/" + id + "/enroll")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isCreated());
+
+    // One-click tick with no prior view starts the clock but is refused.
+    mvc.perform(post("/api/lessons/" + l + "/complete")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void completeBeforeDwellIsRejected() throws Exception {
+    String id = createCourse(facultyTok, "Hasty " + System.nanoTime());
+    String m = addModule(facultyTok, id, "M");
+    String l = addLesson(facultyTok, m, "L");
+    publish(facultyTok, id);
+    mvc.perform(post("/api/courses/" + id + "/enroll")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isCreated());
+
+    // Viewed seconds ago: pdf needs 60s, so immediate completion is refused.
+    mvc.perform(post("/api/lessons/" + l + "/viewed")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isOk());
+    mvc.perform(post("/api/lessons/" + l + "/complete")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void videoGateRequiresWatchPct() throws Exception {
+    String id = createCourse(facultyTok, "Video Gate " + System.nanoTime());
+    String m = addModule(facultyTok, id, "M");
+    String v = addVideoLesson(facultyTok, m, "V", "https://cdn.example.com/lec1.mp4");
+    publish(facultyTok, id);
+    mvc.perform(post("/api/courses/" + id + "/enroll")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isCreated());
+
+    // Dwell satisfied but nothing watched: refused.
+    viewedAged(studentTok, v, 61);
+    mvc.perform(post("/api/lessons/" + v + "/complete")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isBadRequest());
+
+    // Heartbeat to 80%: completes.
+    mvc.perform(post("/api/lessons/" + v + "/watch")
+            .header("Authorization", "Bearer " + studentTok)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"positionSec\":80,\"durationSec\":100}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.watchPct").value(80));
+    mvc.perform(post("/api/lessons/" + v + "/complete")
+            .header("Authorization", "Bearer " + studentTok))
+        .andExpect(status().isOk());
   }
 
   @Test
