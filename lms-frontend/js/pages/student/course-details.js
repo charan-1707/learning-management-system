@@ -253,8 +253,15 @@
   function engageSlotHtml(id) {
     var st = engage[id];
     if (!st) {
+      var meta0 = engageMeta[id] || {};
+      /* No standalone Start button: the countdown begins only when the
+         student presses Open (or plays an inline video). Lessons with no
+         Open affordance at all keep a Start button as their only entry. */
+      if (meta0.hasOpen) {
+        return '<span style="font-size:12px;color:var(--color-text-muted);">Open to begin</span>';
+      }
       return '<button class="btn btn-sm btn-primary" data-engage-start="' + F.esc(id) + '" ' +
-        'title="Open the material, wait out the timer, then complete">Start</button>';
+        'title="Begin this lesson, wait out the timer, then complete">Start</button>';
     }
     if (st.ready) {
       return '<button class="btn btn-sm btn-primary" data-complete-lesson="' + F.esc(id) + '">Mark complete</button>';
@@ -401,7 +408,7 @@
     var done = !!doneIds[l.id];
     var file = null;
     try { file = LH.api.fileUrl(l.fileUrl); } catch (e) { file = null; }
-    engageMeta[l.id] = { type: l.type || null, file: file || l.fileUrl || null };
+    engageMeta[l.id] = { type: l.type || null, file: file || l.fileUrl || null, hasOpen: !!file };
     var openBtn = file
       ? '<a class="btn btn-sm btn-secondary" data-open-lesson="' + F.esc(l.id) + '" href="' + F.esc(file) + '" target="_blank" rel="noopener">Open</a>'
       : '';
@@ -770,7 +777,8 @@ async function renderGrades() {
         startEngage(open.getAttribute('data-open-lesson'));
         return;
       }
-      /* Inline video reveal; first reveal also starts the clock. */
+      /* Inline video reveal only — the clock starts on Open press or on
+         actual playback, never on merely revealing the player. */
       var toggle = e.target.closest('[data-video-toggle]');
       if (toggle) {
         var vid = toggle.getAttribute('data-video-toggle');
@@ -779,7 +787,6 @@ async function renderGrades() {
         if (wrap) {
           var showing = wrap.style.display !== 'none';
           wrap.style.display = showing ? 'none' : '';
-          if (!showing) startEngage(vid);
         }
       }
     });
