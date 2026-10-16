@@ -1,5 +1,6 @@
 package com.learnhub.lms.storage;
 
+import com.learnhub.lms.common.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.ByteArrayResource;
@@ -35,10 +36,21 @@ public class UploadController {
   }
 
   @GetMapping("/api/files/{id}")
-  @Operation(summary = "Download with ownership check")
+  @Operation(summary = "Download with ownership check (bytes from DB, legacy disk fallback)")
   public ResponseEntity<Resource> download(@PathVariable String id) throws IOException {
     StoredFile row = storage.resolve(id);
-    byte[] bytes = Files.readAllBytes(storage.pathOf(row));
+    byte[] bytes = row.getData();
+    if ((bytes == null || bytes.length == 0) && row.getPath() != null) {
+      try {
+        bytes = Files.readAllBytes(storage.pathOf(row));
+      } catch (IOException ex) {
+        bytes = null;
+      }
+    }
+    if (bytes == null || bytes.length == 0) {
+      throw ApiException.notFound(
+          "File content is no longer available (stored before database persistence).");
+    }
     MediaType type;
     try {
       type = MediaType.parseMediaType(row.getMime());

@@ -23,8 +23,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Local file store (plan §9.11, V1). Bytes live under {@code ./uploads};
- * V2 can move to S3 behind the same {@code GET /files/:id} contract.
+ * File store (plan §9.11). Bytes live in the database ({@code stored_files.data}
+ * LONGBLOB) so uploads survive host restarts — local disk is ephemeral on PaaS
+ * hosts. Rows predating the DB move still resolve via their {@code path}.
  */
 @Service
 public class FileStorageService {
@@ -93,23 +94,24 @@ public class FileStorageService {
     if (!mimeOk && !ALLOWED_EXT.contains(ext)) {
       throw ApiException.badRequest("File type not allowed.");
     }
-    String stored = UUID.randomUUID() + "-" + clean;
+    final byte[] bytes;
     try {
-      Files.copy(file.getInputStream(), root.resolve(stored), StandardCopyOption.REPLACE_EXISTING);
+      bytes = file.getBytes();
     } catch (IOException ex) {
-      throw ApiException.badRequest("Could not store file.");
+      throw ApiException.badRequest("Could not read file.");
     }
     StoredFile row = new StoredFile();
     row.setId(UUID.randomUUID().toString());
     row.setOwnerId(me.getId());
     row.setName(original);
     row.setMime(mime.isBlank() ? "application/octet-stream" : mime);
-    row.setSizeBytes(file.getSize());
-    row.setPath(root.resolve(stored).toString());
+    row.setSizeBytes((long) bytes.length);
+    row.setPath(null);
+    row.setData(bytes);
     row.setCreatedAt(java.time.LocalDateTime.now());
     files.save(row);
     return new UploadResponse(row.getId(), "/api/files/" + row.getId(), original,
-        file.getSize(), row.getMime());
+        (long) bytes.length, row.getMime());
   }
 
   @Transactional(readOnly = true)

@@ -3,10 +3,14 @@ package com.learnhub.lms.storage;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
-/** 1:1 with §6.1 stored_files. Row per upload; bytes live under ./uploads (Phase 7). */
+/** 1:1 with §6.1 stored_files. Row per upload; bytes live in {@code data}
+ * (MySQL LONGBLOB) so files survive host restarts — local disk is ephemeral
+ * on PaaS hosts. The legacy {@code path} column is only a fallback for rows
+ * written before the DB move. */
 @Entity
 @Table(name = "stored_files")
 public class StoredFile {
@@ -29,6 +33,10 @@ public class StoredFile {
   @Column(length = 500)
   private String path;
 
+  @Lob
+  @Column(name = "data")
+  private byte[] data;
+
   @Column(name = "created_at")
   private LocalDateTime createdAt;
 
@@ -44,6 +52,8 @@ public class StoredFile {
   public void setSizeBytes(Long sizeBytes) { this.sizeBytes = sizeBytes; }
   public String getPath() { return path; }
   public void setPath(String path) { this.path = path; }
+  public byte[] getData() { return data; }
+  public void setData(byte[] data) { this.data = data; }
   @jakarta.persistence.PrePersist
   void prePersist() {
     if (createdAt == null) {
