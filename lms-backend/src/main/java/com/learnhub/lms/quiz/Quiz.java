@@ -41,6 +41,11 @@ public class Quiz {
   @Column(length = 30)
   private String status;
 
+  /* Final exam marker: at most one final test per course (enforced in
+     QuizService). Gated at 70% course progress, pass mark 40%. */
+  @Column(name = "final_exam", nullable = false)
+  private boolean finalExam = false;
+
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;
 
@@ -58,6 +63,8 @@ public class Quiz {
   public void setDueAt(LocalDateTime dueAt) { this.dueAt = dueAt; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
+  public boolean isFinalExam() { return finalExam; }
+  public void setFinalExam(boolean finalExam) { this.finalExam = finalExam; }
   @jakarta.persistence.PrePersist
   void prePersist() {
     if (createdAt == null) {

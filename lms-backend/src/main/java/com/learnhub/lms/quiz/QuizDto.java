@@ -9,5 +9,5 @@ import java.time.LocalDateTime;
  */
 public record QuizDto(String id, String courseId, String courseName, String title,
     Integer durationMin, Integer attemptsMax, LocalDateTime dueAt, String status,
-    int questionCount, boolean taken, int attempts, String bestScore) {
+    int questionCount, boolean taken, int attempts, String bestScore, boolean finalExam) {
 }

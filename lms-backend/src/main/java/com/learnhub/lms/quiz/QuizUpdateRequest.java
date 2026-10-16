@@ -11,5 +11,6 @@ public record QuizUpdateRequest(
     @Min(value = 1, message = "durationMin must be positive") Integer durationMin,
     @Min(value = 1, message = "attemptsMax must be positive") Integer attemptsMax,
     LocalDateTime dueAt,
-    @Size(max = 30) String status) {
+    @Size(max = 30) String status,
+    Boolean finalExam) {
 }

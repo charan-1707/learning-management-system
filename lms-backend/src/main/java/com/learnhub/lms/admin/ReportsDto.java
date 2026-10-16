@@ -5,7 +5,13 @@ import java.util.List;
 /** GET /api/admin/reports — aggregated live (plan §12). */
 public record ReportsDto(List<EnrollmentByCourse> enrollmentByCourse,
     List<MonthlyActive> monthlyActive, PassRate passRate,
-    List<ProgramDistribution> distributionByProgram) {
+    List<ProgramDistribution> distributionByProgram,
+    List<FinalExamStat> finalExams) {
+
+  /** One row per course final test: attempts, average best pct, 40% pass split. */
+  public record FinalExamStat(String courseId, String course, String code, String title,
+      long attempts, double averagePct, long passed, long failed) {
+  }
 
   public record EnrollmentByCourse(String course, String code, long students) {
   }

@@ -14,6 +14,8 @@ import com.learnhub.lms.communication.NotificationType;
 import com.learnhub.lms.course.Course;
 import com.learnhub.lms.course.CourseRepository;
 import com.learnhub.lms.enrollment.EnrollmentRepository;
+import com.learnhub.lms.enrollment.EnrollmentService;
+import com.learnhub.lms.enrollment.ProgressDto;
 import com.learnhub.lms.user.Role;
 import com.learnhub.lms.user.User;
 import org.springframework.stereotype.Service;
@@ -38,12 +40,18 @@ public class QuizService {
   private final GradeRepository grades;
   private final NotificationService notificationService;
   private final ObjectMapper json;
+  private final EnrollmentService enrollmentProgress;
   private final Authz authz;
+
+  /** Final tests unlock at 70% lesson completion; 40% is the pass mark. */
+  public static final int FINAL_UNLOCK_PERCENT = 70;
+  public static final int FINAL_PASS_PERCENT = 40;
 
   public QuizService(QuizRepository quizzes, QuizQuestionRepository questions,
       QuizAttemptRepository attempts, CourseRepository courses,
       EnrollmentRepository enrollments, GradeRepository grades,
-      NotificationService notificationService, ObjectMapper json, Authz authz) {
+      NotificationService notificationService, ObjectMapper json,
+      EnrollmentService enrollmentProgress, Authz authz) {
     this.quizzes = quizzes;
     this.questions = questions;
     this.attempts = attempts;
@@ -52,6 +60,7 @@ public class QuizService {
     this.grades = grades;
     this.notificationService = notificationService;
     this.json = json;
+    this.enrollmentProgress = enrollmentProgress;
     this.authz = authz;
   }
 
@@ -88,6 +97,9 @@ public class QuizService {
     Course course = courses.findById(req.courseId())
         .orElseThrow(() -> ApiException.notFound("Course not found."));
     authz.requireOwnerOrAdmin(course.getId());
+    if (Boolean.TRUE.equals(req.finalExam()) && hasFinal(course.getId(), null)) {
+      throw ApiException.badRequest("This course already has a final test.");
+    }
     Quiz q = new Quiz();
     q.setId(nextQuizId());
     q.setCourse(course);
@@ -96,6 +108,7 @@ public class QuizService {
     q.setAttemptsMax(req.attemptsMax() == null ? 2 : req.attemptsMax());
     q.setDueAt(req.dueAt());
     q.setStatus(req.status());
+    q.setFinalExam(Boolean.TRUE.equals(req.finalExam()));
     q.setCreatedAt(LocalDateTime.now());
     Quiz saved = quizzes.save(q);
     notificationService.fanOut(course.getId(), NotificationType.quiz, "New quiz available",
@@ -136,6 +149,12 @@ public class QuizService {
     }
     if (req.status() != null) {
       q.setStatus(req.status());
+    }
+    if (req.finalExam() != null) {
+      if (req.finalExam() && hasFinal(q.getCourse().getId(), q.getId())) {
+        throw ApiException.badRequest("This course already has a final test.");
+      }
+      q.setFinalExam(req.finalExam());
     }
     return toDto(quizzes.save(q), authz.currentUserId());
   }
@@ -200,6 +219,13 @@ public class QuizService {
     if (!enrollments.existsByStudent_IdAndCourse_Id(me.getId(), courseId)) {
       throw ApiException.forbidden("Forbidden");
     }
+    if (q.isFinalExam()) {
+      ProgressDto prog = enrollmentProgress.progress(courseId, me.getId());
+      if (prog.total() > 0 && prog.percent() < FINAL_UNLOCK_PERCENT) {
+        throw ApiException.badRequest("Complete at least " + FINAL_UNLOCK_PERCENT
+            + "% of the course to unlock the final test (currently " + prog.percent() + "%).");
+      }
+    }
     if (q.getDueAt() != null && q.getDueAt().isBefore(LocalDateTime.now())) {
       throw ApiException.badRequest("This quiz is past its due date.");
     }
@@ -238,7 +264,8 @@ public class QuizService {
       }
     }
     writeGradeRow(q, me, best, total);
-    return new AttemptResult(score, total, pct, letterGrade(pct), best + "/" + total, nowUsed);
+    return new AttemptResult(score, total, pct, letterGrade(pct), best + "/" + total, nowUsed,
+        pct >= FINAL_PASS_PERCENT);
   }
 
   @Transactional(readOnly = true)
@@ -250,6 +277,12 @@ public class QuizService {
   }
 
   // ---- helpers ----
+
+  /** One final test per course (excluding the quiz being edited, if any). */
+  private boolean hasFinal(String courseId, String excludeId) {
+    return quizzes.findByCourse_Id(courseId).stream()
+        .anyMatch(x -> x.isFinalExam() && (excludeId == null || !x.getId().equals(excludeId)));
+  }
 
   private Quiz findOr404(String id) {
     return quizzes.findById(id).orElseThrow(() -> ApiException.notFound("Quiz not found."));
@@ -285,7 +318,8 @@ public class QuizService {
         .max().orElse(0);
     String bestScore = taken ? best + "/" + count : null;
     return new QuizDto(q.getId(), c.getId(), courseName, q.getTitle(), q.getDurationMin(),
-        q.getAttemptsMax(), q.getDueAt(), q.getStatus(), count, taken, mine.size(), bestScore);
+        q.getAttemptsMax(), q.getDueAt(), q.getStatus(), count, taken, mine.size(), bestScore,
+        q.isFinalExam());
   }
 
   private void writeGradeRow(Quiz q, User student, int best, int total) {

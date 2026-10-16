@@ -14,6 +14,11 @@ import com.learnhub.lms.course.CourseRepository;
 import com.learnhub.lms.course.CourseStatus;
 import com.learnhub.lms.enrollment.Enrollment;
 import com.learnhub.lms.enrollment.EnrollmentRepository;
+import com.learnhub.lms.quiz.Quiz;
+import com.learnhub.lms.quiz.QuizAttempt;
+import com.learnhub.lms.quiz.QuizAttemptRepository;
+import com.learnhub.lms.quiz.QuizRepository;
+import com.learnhub.lms.quiz.QuizService;
 import com.learnhub.lms.user.Role;
 import com.learnhub.lms.user.User;
 import com.learnhub.lms.user.UserRepository;
@@ -47,6 +52,8 @@ public class AdminService {
   private final CourseRepository courses;
   private final EnrollmentRepository enrollments;
   private final SubmissionRepository submissions;
+  private final QuizRepository quizzes;
+  private final QuizAttemptRepository quizAttempts;
   private final GradeRepository grades;
   private final ActivityEventRepository events;
   private final PlatformSettingRepository settings;
@@ -59,6 +66,7 @@ public class AdminService {
 
   public AdminService(UserRepository users, CourseRepository courses,
       EnrollmentRepository enrollments, SubmissionRepository submissions,
+      QuizRepository quizzes, QuizAttemptRepository quizAttempts,
       GradeRepository grades, ActivityEventRepository events,
       PlatformSettingRepository settings, AttendanceService attendance,
       ObjectMapper json, JdbcTemplate jdbc, Authz authz,
@@ -68,6 +76,8 @@ public class AdminService {
     this.courses = courses;
     this.enrollments = enrollments;
     this.submissions = submissions;
+    this.quizzes = quizzes;
+    this.quizAttempts = quizAttempts;
     this.grades = grades;
     this.events = events;
     this.settings = settings;
@@ -144,8 +154,32 @@ public class AdminService {
     }
     List<ReportsDto.ProgramDistribution> dist = byProgram.entrySet().stream()
         .map(e -> new ReportsDto.ProgramDistribution(e.getKey(), e.getValue())).toList();
+
+    List<ReportsDto.FinalExamStat> finals = new ArrayList<>();
+    for (Quiz q : quizzes.findAll()) {
+      if (!q.isFinalExam() || q.getCourse() == null) {
+        continue;
+      }
+      Course fc = q.getCourse();
+      Map<Long, Integer> bestByStudent = new LinkedHashMap<>();
+      for (QuizAttempt a : quizAttempts.findByQuiz_IdOrderBySubmittedAtDesc(q.getId())) {
+        if (a.getStudent() == null || a.getPct() == null) {
+          continue;
+        }
+        bestByStudent.merge(a.getStudent().getId(), a.getPct(), Math::max);
+      }
+      long takers = bestByStudent.size();
+      double avg = takers == 0 ? 0.0
+          : bestByStudent.values().stream().mapToInt(Integer::intValue).average().orElse(0.0);
+      long passedFinal = bestByStudent.values().stream()
+          .filter(p -> p >= QuizService.FINAL_PASS_PERCENT).count();
+      finals.add(new ReportsDto.FinalExamStat(fc.getId(), fc.getName(), fc.getCode(),
+          q.getTitle(), quizAttempts.countByQuiz_Id(q.getId()),
+          Math.round(avg * 10.0) / 10.0, passedFinal, takers - passedFinal));
+    }
+    finals.sort((a, b) -> String.valueOf(a.course()).compareTo(String.valueOf(b.course())));
     return new ReportsDto(byCourse, monthly,
-        new ReportsDto.PassRate(passed, pcts.size() - passed, average), dist);
+        new ReportsDto.PassRate(passed, pcts.size() - passed, average), dist, finals);
   }
 
   @Transactional(readOnly = true)
