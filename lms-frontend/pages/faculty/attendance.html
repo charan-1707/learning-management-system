@@ -24,7 +24,7 @@
   <main class="main" id="main">
 
     <div class="page-header">
-      <div class="page-title-section"><h1>Attendance</h1><p>Take attendance for a session and review class averages.</p></div>
+      <div class="page-title-section"><h1>Attendance</h1><p>Take attendance for a session, review class averages and the monthly register.</p></div>
     </div>
 
     <div class="card" style="padding:var(--spacing-5);margin-bottom:var(--spacing-6);">
@@ -69,6 +69,17 @@
         </section>
       </div>
     </div>
+
+    <section class="card" id="att-report-card" style="margin-top:var(--spacing-6);display:none;">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div><h2 class="card-title" id="att-report-title">Monthly register</h2><p class="card-subtitle" id="att-report-sub">Per-student day-by-day record</p></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:12px;color:var(--color-text-muted);"><span style="font-weight:700;color:var(--color-success);">P</span> present &middot; <span style="font-weight:700;color:var(--color-danger);">A</span> absent &middot; &ndash; no session</span>
+          <button class="btn btn-sm btn-secondary" id="att-report-export">Export CSV</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;overflow:hidden;"><div id="att-report-body" style="overflow-x:auto;"></div></div>
+    </section>
 
   </main>
   <script src="../../js/pages/faculty/attendance.js"></script>

@@ -205,6 +205,130 @@
     (view && view.sessions ? view.sessions : []).forEach(function (s) { dayMap[s.date] = s; });
   }
 
+  /* ------------------------------ monthly register ------------------------------ */
+
+  var reportCache = { students: [], monthDays: [], statusOf: {}, daysInMonth: 0, courseCode: '' };
+
+  function dayCell(status, hasSession) {
+    if (!hasSession) return '<span style="color:var(--color-text-muted);">–</span>';
+    var ok = status === 'present';
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:7px;font-size:11px;font-weight:700;' +
+      (ok ? 'color:var(--color-success);background:var(--color-success-light);">P'
+        : 'color:var(--color-danger);background:var(--color-danger-light);">A') + '</span>';
+  }
+
+  async function renderReport() {
+    var card = $('#att-report-card');
+    var body = $('#att-report-body');
+    if (!card || !body) return;
+    var cid = selCourse();
+    if (!cid) { card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    var title = $('#att-report-title');
+    if (title) title.textContent = 'Monthly register — ' + MONTHS[cursor.m - 1] + ' ' + cursor.y;
+
+    var monthDays = Object.keys(dayMap).filter(function (d) {
+      return d.slice(0, 7) === cursor.y + '-' + pad(cursor.m);
+    }).sort();
+    var roster = await LH.api.courses.roster(cid).catch(function () { return []; });
+    var students = roster.slice().sort(function (a, b) {
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    }).map(function (r) {
+      return { id: r.studentId, name: r.name || 'Student', email: r.email || '' };
+    });
+    var sub = $('#att-report-sub');
+    if (sub) sub.textContent = students.length + ' student(s) · ' + monthDays.length + ' session(s) this month';
+
+    var daysInMonth = new Date(cursor.y, cursor.m, 0).getDate();
+    reportCache = { students: students, monthDays: monthDays, statusOf: {}, daysInMonth: daysInMonth, courseCode: className(cid) };
+
+    if (!students.length) {
+      body.innerHTML = '<div style="padding:24px;">' + UI.emptyState('attendance', 'No students', 'Nobody is enrolled in this course yet.') + '</div>';
+      return;
+    }
+    if (!monthDays.length) {
+      body.innerHTML = '<div style="padding:24px;">' + UI.emptyState('attendance', 'No sessions this month', 'Mark attendance on any day to start this month\u2019s register.') + '</div>';
+      return;
+    }
+
+    var perDay = await Promise.all(monthDays.map(function (d) {
+      return LH.api.attendance.daySession(cid, d).catch(function () { return null; });
+    }));
+    var statusOf = {};
+    perDay.forEach(function (sess, i) {
+      if (!sess || !sess.records) return;
+      sess.records.forEach(function (r) {
+        (statusOf[r.studentId] = statusOf[r.studentId] || {})[monthDays[i]] = r.status;
+      });
+    });
+    reportCache.statusOf = statusOf;
+    var sessionSet = {};
+    monthDays.forEach(function (d) { sessionSet[d] = true; });
+
+    var head = '<th style="position:sticky;left:0;background:var(--color-bg-secondary);z-index:1;text-align:left;">Student</th>';
+    for (var d = 1; d <= daysInMonth; d++) {
+      var iso = isoOf(cursor.y, cursor.m, d);
+      head += '<th style="min-width:36px;text-align:center;' +
+        (sessionSet[iso] ? '' : 'color:var(--color-text-muted);font-weight:400;') + '">' + d + '</th>';
+    }
+    var rows = students.map(function (s) {
+      var cells = '';
+      for (var k = 1; k <= daysInMonth; k++) {
+        var key = isoOf(cursor.y, cursor.m, k);
+        var st = (statusOf[s.id] || {})[key];
+        cells += '<td style="text-align:center;">' + dayCell(st, !!sessionSet[key]) + '</td>';
+      }
+      return '<tr><td style="position:sticky;left:0;background:var(--color-bg-secondary);z-index:1;">' +
+        '<div class="avatar-cell">' + UI.avatar(s.name, 'sm') +
+        '<span style="font-weight:500;white-space:nowrap;">' + F.esc(s.name) + '</span></div></td>' + cells + '</tr>';
+    }).join('');
+
+    body.innerHTML = '<div class="table-wrapper" style="border:none;border-radius:0;margin:0;">' +
+      '<table class="table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function csvEsc(v) {
+    var s = String(v == null ? '' : v);
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+
+  function exportReportCSV() {
+    var c = reportCache;
+    if (!c.students || !c.students.length || !c.monthDays.length) {
+      LH.toast.info('Nothing to export', 'There are no recorded sessions in this view.');
+      return;
+    }
+    var header = ['Student', 'Email'];
+    for (var d = 1; d <= c.daysInMonth; d++) header.push(String(d));
+    var lines = [header.map(csvEsc).join(',')];
+    c.students.forEach(function (s) {
+      var row = [s.name, s.email];
+      for (var k = 1; k <= c.daysInMonth; k++) {
+        var iso = isoOf(cursor.y, cursor.m, k);
+        var inMonth = c.monthDays.indexOf(iso) !== -1;
+        var st = inMonth ? (c.statusOf[s.id] || {})[iso] : undefined;
+        row.push(!inMonth ? '' : st === 'present' ? 'P' : st === 'absent' ? 'A' : '');
+      }
+      lines.push(row.map(csvEsc).join(','));
+    });
+    var blob;
+    try {
+      blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    } catch (e) { LH.toast.error('Export failed', 'This browser cannot generate files.'); return; }
+    var a = document.createElement('a');
+    a.href = (window.URL || window.webkitURL).createObjectURL(blob);
+    a.download = 'attendance-' + (c.courseCode || 'course').replace(/[^a-z0-9]+/gi, '-').toLowerCase() +
+      '-' + cursor.y + '-' + pad(cursor.m) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      try { (window.URL || window.webkitURL).revokeObjectURL(a.href); } catch (e) { /* ignore */ }
+      a.remove();
+    }, 500);
+    LH.toast.success('Export ready', 'Monthly register downloaded as CSV.');
+  }
+
   /* ------------------------------ init ------------------------------ */
 
   async function init() {
@@ -220,11 +344,15 @@
     $('#att-prev').addEventListener('click', function () {
       if (cursor.m === 1) { cursor.y--; cursor.m = 12; } else cursor.m--;
       renderCalendar();
+      renderReport();
     });
     $('#att-next').addEventListener('click', function () {
       if (cursor.m === 12) { cursor.y++; cursor.m = 1; } else cursor.m++;
       renderCalendar();
+      renderReport();
     });
+    var expBtn = $('#att-report-export');
+    if (expBtn) expBtn.addEventListener('click', exportReportCSV);
     $('#att-today').addEventListener('click', function () { selectDay(todayISO()); });
 
     $('#mark-attendance').addEventListener('click', function () {
@@ -244,6 +372,7 @@
           renderCalendar();
           loadDay();
           renderAverages();
+          renderReport();
         });
       }).catch(function (err) {
         LH.toast.error('Save failed', (err && err.error) || 'Attendance could not be saved.');
@@ -270,6 +399,7 @@
     renderCalendar();
     await loadDay();
     await renderAverages();
+    await renderReport();
   }
 
   LH.app.register('faculty-attendance', init);
