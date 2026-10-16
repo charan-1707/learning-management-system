@@ -193,9 +193,11 @@ LH.resetApiBase = function () {
       return resolve(DB.enrollments.forCourse(courseId).map(function (e) {
         var u = DB.get('users', e.studentId) || {};
         var sl = directory.filter(function (s) { return s.id === e.studentId; })[0] || {};
+        var att = parseInt(sl.attendance, 10);
         return { studentId: e.studentId, name: u.name || sl.name || 'Student',
           email: u.email || sl.email || '', program: u.program || sl.program || '',
           attendance: sl.attendance || null,
+          attendancePct: isNaN(att) ? null : att,
           progressPercent: e.progressPercent, status: e.status };
       }));
     },

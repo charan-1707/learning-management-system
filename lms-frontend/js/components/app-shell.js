@@ -70,6 +70,7 @@ window.LH = window.LH || {};
     'admin-students': ['Students', 'Admin'],
     'admin-faculty': ['Faculty', 'Admin'],
     'admin-courses': ['Courses', 'Admin'],
+    'admin-roster': ['Course Roster', 'Admin'],
     'admin-users': ['Users', 'Admin'],
     'admin-reports': ['Reports', 'Admin'],
     'admin-settings': ['Settings', 'Admin'],

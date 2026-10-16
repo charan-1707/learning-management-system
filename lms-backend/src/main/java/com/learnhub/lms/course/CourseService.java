@@ -1,5 +1,6 @@
 package com.learnhub.lms.course;
 
+import com.learnhub.lms.attendance.AttendanceService;
 import com.learnhub.lms.common.ApiException;
 import com.learnhub.lms.common.Authz;
 import com.learnhub.lms.common.PageResponse;
@@ -33,14 +34,17 @@ public class CourseService {
   private final ModuleRepository modules;
   private final EnrollmentRepository enrollments;
   private final ObjectMapper json;
+  private final AttendanceService attendance;
   private final Authz authz;
 
   public CourseService(CourseRepository courses, ModuleRepository modules,
-      EnrollmentRepository enrollments, ObjectMapper json, Authz authz) {
+      EnrollmentRepository enrollments, ObjectMapper json, AttendanceService attendance,
+      Authz authz) {
     this.courses = courses;
     this.modules = modules;
     this.enrollments = enrollments;
     this.json = json;
+    this.attendance = attendance;
     this.authz = authz;
   }
 
@@ -204,8 +208,10 @@ public class CourseService {
     List<RosterRow> rows = new ArrayList<>();
     for (Enrollment e : enrollments.findByCourse_Id(id)) {
       User s = e.getStudent();
+      int att = attendance.attendancePct(s.getId(), id);
       rows.add(new RosterRow(s.getId(), s.getName(), s.getEmail(),
-          e.getProgressPercent(), e.getStatus() == null ? null : e.getStatus().name()));
+          e.getProgressPercent(), e.getStatus() == null ? null : e.getStatus().name(),
+          att < 0 ? null : att));
     }
     return rows;
   }

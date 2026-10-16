@@ -35,6 +35,7 @@
         '<td><span class="text-sm">' + F.esc(c.category || '') + '</span></td>' +
         '<td>' +
           '<div class="btn-group" role="group">' +
+            '<a class="btn btn-sm btn-secondary" href="roster.html?id=' + c.id + '">View students</a>' +
             '<button class="btn btn-sm btn-ghost" data-edit="' + c.id + '" title="Edit">' + I.icon('settings', 14) + '</button>' +
             '<button class="btn btn-sm btn-ghost" data-toggle-status="' + c.id + '" title="Toggle publish/draft">' + I.icon(status === 'published' ? 'lock' : 'check', 14) + '</button>' +
             '<button class="btn btn-sm btn-ghost" data-delete="' + c.id + '" title="Delete" style="color:var(--color-danger);">' + I.icon('trash', 14) + '</button>' +
