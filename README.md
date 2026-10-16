@@ -115,8 +115,9 @@ file with the new CA and redeploy.
 pages all load · admin broadcast reaches inboxes · a backend restart keeps all data.
 
 > Heads-up: free tiers sleep when idle, so the first request can take ~a minute
-> (the app retries automatically). Uploaded files live on the backend's disk,
-> which free hosts wipe on restart — fine to start, object storage later.
+> (the app retries automatically). Uploaded files live in the database
+> (LONGBLOB), so they survive restarts — just watch total size against the
+> free DB quota (keep videos as links).
 
 ## Notes
 
