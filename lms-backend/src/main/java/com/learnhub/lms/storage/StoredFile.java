@@ -33,8 +33,10 @@ public class StoredFile {
   @Column(length = 500)
   private String path;
 
+  // LONGBLOB (not Hibernate's default tinyblob): must match V12, otherwise
+  // ddl-auto: validate aborts the whole boot on the type mismatch.
   @Lob
-  @Column(name = "data")
+  @Column(name = "data", columnDefinition = "LONGBLOB")
   private byte[] data;
 
   @Column(name = "created_at")
