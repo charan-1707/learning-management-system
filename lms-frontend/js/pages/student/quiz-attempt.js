@@ -170,13 +170,13 @@
       return answers[i] != null ? answers[i] : null;
     });
     LH.api.quizzes.attempt(quiz.id, payload).then(function (res) {
-      showResult(res.score, res.total, res.pct, auto);
+      showResult(res.score, res.total, res.pct, auto, res.passed);
     }).catch(function (err) {
       LH.toast.error('Submit failed', (err && err.error) || 'Your attempt could not be recorded.');
     });
   }
 
-  function showResult(score, total, pct, auto) {
+  function showResult(score, total, pct, auto, passed) {
 
     var details = '';
     if (auto) details = 'Your time ran out. The quiz was submitted automatically.';
@@ -185,6 +185,7 @@
       '<div style="text-align:center;padding:16px 0;">' +
         '<div style="width:96px;height:96px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;background:' + (pct >= 60 ? 'var(--color-success-light)' : pct >= 40 ? 'var(--color-warning-light)' : 'var(--color-danger-light)') + ';color:' + (pct >= 60 ? 'var(--color-success)' : pct >= 40 ? 'var(--color-warning)' : 'var(--color-danger)') + ';font-size:26px;font-weight:700;">' + pct + '%</div>' +
         '<h3 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin-bottom:6px;">' + (pct >= 60 ? 'Great job!' : pct >= 40 ? 'Keep practicing' : 'Review the material') + '</h3>' +
+        (passed != null ? '<div style="margin-bottom:12px;">' + UI.badge(passed ? 'Passed' : 'Failed', passed ? 'success' : 'danger') + '</div>' : '') +
         '<p style="font-size:14px;color:var(--color-text-tertiary);margin-bottom:16px;">You scored <strong style="color:var(--color-text-primary);">' + score + '/' + total + '</strong> correct answers.</p>' +
         (details ? '<p style="font-size:13px;color:var(--color-warning);margin-bottom:12px;">' + details + '</p>' : '') +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;background:var(--color-bg-tertiary);border-radius:12px;padding:14px;">' +
@@ -239,6 +240,27 @@
       if (area) area.innerHTML = UI.emptyState('quizzes', 'No quiz found', 'This quiz may have been removed.');
       return;
     }
+    /* Final tests stay locked until 70% course completion (server enforces
+       too — this panel just explains it instead of showing dead questions). */
+    if (quiz.finalExam && quiz.courseId) {
+      var prog = null;
+      try {
+        var u = LH.shell.getUser();
+        prog = await LH.api.enrollments.progress(u ? u.id : null, quiz.courseId).catch(function () { return null; });
+      } catch (e) { prog = null; }
+      var pct = prog ? prog.percent : 0;
+      var total = prog ? prog.total : 0;
+      if (total > 0 && pct < 70) {
+        var area = $('#question-area');
+        if (area) area.innerHTML = UI.emptyState('lock', 'Final test locked',
+          'Complete at least 70% of the course to unlock this final test — you are at ' + pct + '%.') +
+          '<div style="text-align:center;margin-top:16px;"><a class="btn btn-secondary" href="course-details.html?id=' + quiz.courseId + '">Back to course</a></div>';
+        var tb = $('#quiz-timer');
+        if (tb) tb.style.display = 'none';
+        return;
+      }
+    }
+
     questions = await LH.api.quizzes.questions(quiz.id).catch(function () { return []; });
     questions = (questions || []).map(function (q) { return { q: q.q || q.question, options: q.options || [] }; });
 

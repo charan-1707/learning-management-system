@@ -45,7 +45,7 @@
         '<div class="card-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
           '<div class="activity-icon warning">' + I.icon('quizzes') + '</div>' +
           '<div style="flex:1;min-width:180px;">' +
-            '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span style="font-size:15px;font-weight:600;color:var(--color-text-primary);">' + F.esc(q.title) + '</span>' + status + '</div>' +
+            '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span style="font-size:15px;font-weight:600;color:var(--color-text-primary);">' + F.esc(q.title) + '</span>' + status + (q.finalExam ? UI.badge('Final test', 'info') : '') + '</div>' +
             '<div style="font-size:13px;color:var(--color-text-muted);margin-top:3px;">' + F.esc(q.course) + ' &middot; ' + q.questions + ' questions &middot; ' + q.duration + ' min' + attempted + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
@@ -116,17 +116,19 @@
 
       var modal = LH.modal.open(
         '<p style="font-size:13px;color:var(--color-text-tertiary);margin-bottom:14px;">' +
-          F.esc(q.course || '') + ' &middot; ' + q.questions + ' questions &middot; ' + q.duration + ' min</p>' +
+          F.esc(q.course || '') + ' &middot; ' + q.questions + ' questions &middot; ' + q.duration + ' min' +
+          (q.finalExam ? ' &middot; Final test (unlocks at 70%, pass 40%)' : '') + '</p>' +
         '<div id="qv-stats">' + statsHtml + '</div>' +
         (att.length
           ? '<h4 style="font-size:14px;font-weight:600;margin:14px 0 8px;">Attempts by student</h4>' +
             '<div class="table-wrapper" style="max-height:300px;overflow:auto;margin:14px 0 8px;border:1px solid var(--color-border-light);border-radius:10px;"><table class="table">' +
-            '<thead><tr><th>Student</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>' +
+            '<thead><tr><th>Student</th><th>Score</th><th>Percentage</th><th>Result</th><th>Date</th></tr></thead><tbody>' +
             att.map(function (a) {
               var p = a.pct != null ? a.pct : (a.total ? Math.round(a.score / a.total * 100) : 0);
               return '<tr><td style="font-weight:500;">' + F.esc(a.studentName || ('#' + a.studentId)) + '</td>' +
                 '<td>' + a.score + ' / ' + a.total + '</td>' +
                 '<td style="font-weight:600;">' + p + '%</td>' +
+                '<td>' + UI.badge(p >= 40 ? 'Passed' : 'Failed', p >= 40 ? 'success' : 'danger') + '</td>' +
                 '<td class="text-tertiary">' + D.format(a.submittedAt) + '</td></tr>';
             }).join('') + '</tbody></table></div>'
           : '') +
@@ -147,12 +149,28 @@
           : '<p style="font-size:12px;color:var(--color-text-tertiary);">No attempts yet. To change questions, delete and recreate this quiz.</p>') +
         '<div class="form-error" data-qv-error style="display:none;"></div>' +
         '<div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding:20px 0 0;">' +
+          '<button class="btn btn-ghost" data-qv-final>' + (q.finalExam ? 'Remove final mark' : 'Mark as final test') + '</button>' +
           '<button class="btn btn-secondary" data-qv-cancel>Cancel</button>' +
           '<button class="btn btn-primary" data-qv-save>Save changes</button>' +
         '</div>',
         { title: 'Quiz details', width: '760px' });
       var overlay = modal.overlay;
       overlay.querySelector('[data-qv-cancel]').addEventListener('click', function () { LH.modal.close(); });
+      var finalBtn = overlay.querySelector('[data-qv-final]');
+      if (finalBtn) finalBtn.addEventListener('click', function () {
+        LH.api.quizzes.update(id, { finalExam: !q.finalExam }).then(function () {
+          LH.modal.close();
+          renderList();
+          LH.toast.success(q.finalExam ? 'Final mark removed' : 'Marked as final test',
+            q.finalExam ? 'This quiz is a normal quiz again.'
+              : 'Unlocks for students at 70% course completion.');
+        }).catch(function (err) {
+          var err2 = overlay.querySelector('[data-qv-error]');
+          var msg = (err && err.error) || 'Could not change the final mark.';
+          if (err2) { err2.textContent = msg; err2.style.display = 'block'; }
+          else LH.toast.error('Save failed', msg);
+        });
+      });
       overlay.querySelector('[data-qv-save]').addEventListener('click', function () {
         var title = overlay.querySelector('#qv-title').value.trim();
         if (!title) {
@@ -180,14 +198,17 @@
     });
   }
 
-  async function buildSheet() {
+  async function buildSheet(finalMode) {
     var host = $('#quiz-sheet');
     var opts = '<option value="">Select course</option>' + (await coursesTaught()).map(function (c) { return '<option value="' + c.id + '">' + F.esc(c.name) + '</option>'; }).join('');
 
     host.hidden = false;
     host.innerHTML =
       '<section class="card" style="margin-bottom:var(--spacing-6);">' +
-        '<div class="card-header"><h2 class="card-title">New quiz</h2><p class="card-subtitle">Configure the quiz and add questions</p></div>' +
+        '<div class="card-header"><h2 class="card-title">' + (finalMode ? 'New final test' : 'New quiz') + '</h2>' +
+          '<p class="card-subtitle">' + (finalMode
+            ? 'One final test per course · unlocks at 70% course completion · pass mark 40%'
+            : 'Configure the quiz and add questions') + '</p></div>' +
         '<div class="card-body">' +
           '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">' +
             '<div class="form-group" style="grid-column:1 / -1;"><label class="form-label" for="fq-title">Title</label>' +
@@ -200,7 +221,7 @@
             '<div class="form-group"><label class="form-label" for="fq-time">Time limit (min)</label>' +
               '<input class="form-input" id="fq-time" type="number" min="5" max="60" value="15"></div>' +
             '<div class="form-group"><label class="form-label" for="fq-attempts">Attempts allowed</label>' +
-              '<select class="form-input form-select" id="fq-attempts"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></div>' +
+              '<select class="form-input form-select" id="fq-attempts"><option value="1"' + (finalMode ? ' selected' : '') + '>1</option><option value="2"' + (finalMode ? '' : ' selected') + '>2</option><option value="3">3</option></select></div>' +
           '</div>' +
 
           '<div style="display:flex;align-items:center;justify-content:space-between;margin:20px 0 12px;border-top:1px solid var(--color-border-light);padding-top:16px;">' +
@@ -210,7 +231,7 @@
           '<div class="stack" id="question-list"></div>' +
 
           '<div style="display:flex;gap:10px;margin-top:20px;">' +
-            '<button class="btn btn-primary" id="fq-publish">' + I.icon('check', 15) + ' Publish quiz</button>' +
+            '<button class="btn btn-primary" id="fq-publish">' + I.icon('check', 15) + (finalMode ? ' Publish final test' : ' Publish quiz') + '</button>' +
             '<button class="btn btn-secondary" id="fq-cancel">Cancel</button>' +
           '</div>' +
         '</div>' +
@@ -252,8 +273,8 @@
     return [blankQuestion()];
   }
 
-  async function showSheet() {
-    var s = await buildSheet();
+  async function showSheet(finalMode) {
+    var s = await buildSheet(finalMode);
     var host = s.host;
     var questions = freshQuestions();
 
@@ -349,6 +370,7 @@
           attempts: 0,
           bestScore: null,
           status: 'available',
+          finalExam: !!finalMode,
           due: dueRaw ? new Date(dueRaw + 'T23:59:00').toISOString() : null
         });
       }).then(function (created) {
@@ -357,16 +379,20 @@
         host.hidden = true;
         host.innerHTML = '';
         renderList();
-        LH.toast.success('Quiz published', 'The quiz is now open for students.');
+        LH.toast.success(finalMode ? 'Final test published' : 'Quiz published',
+          finalMode ? 'The final test unlocks for students at 70% course completion.'
+            : 'The quiz is now open for students.');
       }).catch(function (err) {
-        LH.toast.error('Publish failed', (err && err.error) || 'The quiz could not be published.');
+        LH.toast.error('Publish failed', (err && err.error) || (finalMode ? 'The final test could not be published.' : 'The quiz could not be published.'));
       });
     });
   }
 
   async function init() {
     await renderList();
-    $('#new-quiz').addEventListener('click', showSheet);
+    $('#new-quiz').addEventListener('click', function () { showSheet(false); });
+    var nf = $('#new-final');
+    if (nf) nf.addEventListener('click', function () { showSheet(true); });
   }
 
   LH.app.register('faculty-quizzes', init);

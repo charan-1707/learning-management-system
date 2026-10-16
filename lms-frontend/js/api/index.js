@@ -376,7 +376,7 @@ LH.resetApiBase = function () {
     update: function (id, patch) {
       var q = DB.get('quizzes', id);
       if (q && patch) {
-        ['title', 'duration', 'durationMin', 'attemptsMax', 'due', 'dueAt', 'status'].forEach(function (k) {
+        ['title', 'duration', 'durationMin', 'attemptsMax', 'due', 'dueAt', 'status', 'finalExam'].forEach(function (k) {
           if (patch[k] !== undefined) q[k] = patch[k];
         });
         DB.persist('quizzes');
@@ -392,6 +392,7 @@ LH.resetApiBase = function () {
       });
       var total = qs.length;
       var pct = total ? Math.round(score / total * 100) : 0;
+      var passed = pct >= 40;
       var quiz = DB.get('quizzes', quizId);
       if (quiz) {
         if (quiz.bestScore) {
@@ -404,7 +405,7 @@ LH.resetApiBase = function () {
         quiz.attempts = (quiz.attempts || 0) + 1;
         DB.persist('quizzes');
       }
-      return resolve({ score: score, total: total, pct: pct });
+      return resolve({ score: score, total: total, pct: pct, passed: passed });
     },
     nextQuiz: function () {
       var upcoming = DB.list('quizzes').filter(function (q) { return !q.taken; })
@@ -1307,7 +1308,8 @@ LH.resetApiBase = function () {
       courseId: rec.courseId, title: rec.title,
       durationMin: rec.duration != null ? rec.duration : rec.durationMin,
       attemptsMax: rec.attemptsMax != null ? rec.attemptsMax : 2,
-      dueAt: isoLocal(rec.due || rec.dueAt), status: rec.status
+      dueAt: isoLocal(rec.due || rec.dueAt), status: rec.status,
+      finalExam: !!rec.finalExam
     });
   };
   API.quizzes.replaceQuestions = function (quizId, questions) {
@@ -1327,6 +1329,7 @@ LH.resetApiBase = function () {
     if (p.due !== undefined) body.dueAt = p.due ? isoLocal(p.due) : null;
     else if (p.dueAt !== undefined) body.dueAt = p.dueAt ? isoLocal(p.dueAt) : null;
     if (p.status != null) body.status = p.status;
+    if (p.finalExam !== undefined) body.finalExam = !!p.finalExam;
     return patch('/quizzes/' + id, body);
   };
   API.quizzes.attempts = function (quizId) {

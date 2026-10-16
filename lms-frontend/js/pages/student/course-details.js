@@ -540,9 +540,40 @@
       return;
     }
 
+    var prog = await LH.api.enrollments.progress(uid(), course.id).catch(function () { return null; });
+    var progPct = prog ? prog.percent : 0;
+    var progTotal = prog ? prog.total : 0;
     var rows = (await LH.api.quizzes.list().catch(function () { return []; }))
       .filter(function (q) { return q.courseId === course.id; })
       .map(function (q) {
+        var finalBadge = q.finalExam ? UI.badge('Final test', 'info') : '';
+        var title = '<div class="activity-title">' + F.esc(q.title) + ' ' + finalBadge + '</div>';
+        var meta = '<div class="activity-meta">' + q.questions + ' questions &middot; ' + q.duration + ' min &middot; due ' + D.format(q.due) + '</div>';
+        /* Final test taken: best score plus the 40% pass verdict. */
+        if (q.taken && q.finalExam) {
+          var parts = String(q.bestScore || '0/0').split('/');
+          var bpct = parts[1] ? Math.round(Number(parts[0]) / Number(parts[1]) * 100) : 0;
+          return '<div class="activity-item" style="align-items:center;">' +
+            '<div class="activity-icon success">' + I.icon('quizzes') + '</div>' +
+            '<div class="activity-content">' + title + meta + '</div>' +
+            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">' +
+            '<span style="font-size:13px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;">' + (q.bestScore || '') + '</span>' +
+            UI.badge(bpct >= 40 ? 'Passed' : 'Failed', bpct >= 40 ? 'success' : 'danger') +
+          '</div>';
+        }
+        /* Final test not taken: locked until 70% course completion. */
+        if (!q.taken && q.finalExam) {
+          var unlocked = progTotal === 0 || progPct >= 70;
+          return '<div class="activity-item" style="align-items:center;">' +
+            '<div class="activity-icon ' + (unlocked ? 'warning' : 'neutral') + '">' + I.icon('lock') + '</div>' +
+            '<div class="activity-content">' + title + meta +
+            '<div class="activity-meta">' + (unlocked ? 'Unlocked — good luck!' : 'Unlocks at 70% course completion (you are at ' + progPct + '%)') + '</div></div>' +
+            '<div style="display:flex;align-items:center;gap:10px;">' +
+            (unlocked
+              ? '<a class="btn btn-primary" href="quiz-attempt.html?id=' + q.id + '" data-quiz-start>' + I.icon('play', 14) + ' Start final test</a>'
+              : '<span class="btn btn-sm btn-ghost" style="cursor:default;">Locked</span>') +
+            '</div>';
+        }
         /* Available quizzes: clean, slightly larger Start button with no
            status pill or placeholder score behind it. */
         if (!q.taken) {

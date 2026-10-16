@@ -534,6 +534,7 @@ window.LH = window.LH || {};
       { month: 'Jul', active: 2510 }, { month: 'Aug', active: 2890 }, { month: 'Sep', active: 3120 }
     ],
     passRate: { passed: 1825, failed: 245, average: '88%' },
+    finalExams: [],
     distributionByProgram: [
       { program: 'B.Tech CSE', students: 1420 }, { program: 'B.Tech IT', students: 860 },
       { program: 'MCA', students: 410 }, { program: 'M.Tech', students: 215 }

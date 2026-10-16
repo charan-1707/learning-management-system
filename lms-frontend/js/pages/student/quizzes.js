@@ -13,7 +13,7 @@
     return '<div class="activity-item" style="align-items:center;flex-wrap:wrap;">' +
       '<div class="activity-icon ' + (isAvailable ? 'warning' : 'success') + '">' + I.icon('quizzes') + '</div>' +
       '<div class="activity-content">' +
-        '<div class="activity-title">' + F.esc(q.title) + '</div>' +
+        '<div class="activity-title">' + F.esc(q.title) + (q.finalExam ? ' ' + UI.badge('Final test', 'info') : '') + '</div>' +
         '<div class="activity-meta">' + F.esc(q.course) + ' &middot; ' + q.questions + ' questions &middot; ' + q.duration + ' min &middot; ' + q.attemptsMax + ' attempts</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +

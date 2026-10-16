@@ -61,6 +61,21 @@
       '</section>' +
 
       '<section class="card">' +
+        '<div class="card-header"><h2 class="card-title">Final exams</h2><p class="card-subtitle">Per-course final tests — attempts, average best score, 40% pass split</p></div>' +
+        '<div class="card-body" style="padding-top:var(--spacing-4);">' +
+          (((r.finalExams && r.finalExams.length) ? r.finalExams.map(function (f) {
+            return '<div style="margin-bottom:14px;"><div class="flex items-center justify-between" style="margin-bottom:4px;gap:12px;">' +
+              '<span style="font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + F.esc(f.code + ' — ' + f.title) + '</span>' +
+              '<span style="font-size:12px;color:var(--color-text-tertiary);white-space:nowrap;">' + F.n(f.attempts) + ' attempts &middot; ' + f.averagePct + '% avg</span></div>' +
+              '<div style="display:flex;align-items:center;gap:10px;">' + UI.progress(Math.round(f.averagePct)) +
+              '<span style="font-size:12px;font-weight:600;white-space:nowrap;color:var(--color-success);">' + F.n(f.passed) + ' passed</span>' +
+              '<span style="font-size:12px;font-weight:600;white-space:nowrap;color:var(--color-danger);">' + F.n(f.failed) + ' failed</span></div>' +
+            '</div>';
+          }).join('') : '<p style="font-size:13px;color:var(--color-text-tertiary);">No final tests created yet.</p>')) +
+        '</div>' +
+      '</section>' +
+
+      '<section class="card">' +
         '<div class="card-header"><h2 class="card-title">Assessment pass rate</h2><p class="card-subtitle">Across all recorded assessments</p></div>' +
         '<div class="card-body" style="padding-top:var(--spacing-4);">' +
           UI.progress(Math.round(avgNum), 'success') +
