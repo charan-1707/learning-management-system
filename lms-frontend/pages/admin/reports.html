@@ -15,6 +15,12 @@
   <link rel="stylesheet" href="../../css/responsive.css">
   <link rel="stylesheet" href="../../css/design-system.css">
   <link rel="stylesheet" href="../../css/antigravity.css">
+  <style>
+    .final-row { transition: background 0.15s ease; }
+    .final-row:hover { background: var(--color-bg-tertiary); }
+    .final-row .final-hint { opacity: 0; transition: opacity 0.15s ease; }
+    .final-row:hover .final-hint { opacity: 1; }
+  </style>
   <script src="../../js/boot.js"></script>
 </head>
 <body data-role="admin" data-page="admin-reports" data-title="Reports">

@@ -175,7 +175,7 @@ public class AdminService {
           .filter(p -> p >= QuizService.FINAL_PASS_PERCENT).count();
       finals.add(new ReportsDto.FinalExamStat(fc.getId(), fc.getName(), fc.getCode(),
           q.getTitle(), quizAttempts.countByQuiz_Id(q.getId()),
-          Math.round(avg * 10.0) / 10.0, passedFinal, takers - passedFinal));
+          Math.round(avg * 10.0) / 10.0, passedFinal, takers - passedFinal, q.getId()));
     }
     finals.sort((a, b) -> String.valueOf(a.course()).compareTo(String.valueOf(b.course())));
     return new ReportsDto(byCourse, monthly,

@@ -17,6 +17,55 @@
     '</div>';
   }
 
+  function passBadge(ok) {
+    return UI.badge(ok ? 'Passed' : 'Failed', ok ? 'success' : 'danger');
+  }
+
+  /* Drill-down: who attempted this final (best per student) + who never did. */
+  async function openFinalAttempts(f) {
+    var parts = await Promise.all([
+      LH.api.quizzes.attempts(f.quizId).catch(function () { return null; }),
+      LH.api.courses.roster(f.courseId).catch(function () { return null; })
+    ]);
+    var atts = parts[0], roster = parts[1];
+    if (!atts || !roster) {
+      LH.toast.error('Not available', 'Could not load attempts for this final test.');
+      return;
+    }
+    var best = {};
+    atts.forEach(function (a) {
+      var p = a.pct != null ? a.pct : (a.total ? Math.round(a.score / a.total * 100) : 0);
+      var cur = best[a.studentId];
+      if (!cur || p > cur.pct || (p === cur.pct && String(a.submittedAt) > String(cur.date))) {
+        best[a.studentId] = {
+          name: a.studentName || ('#' + a.studentId),
+          score: a.score, total: a.total, pct: p, date: a.submittedAt
+        };
+      }
+    });
+    var rows = roster.slice().sort(function (a, b) {
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    }).map(function (s) {
+      var b = best[s.studentId];
+      if (!b) {
+        return '<tr><td style="font-weight:500;">' + F.esc(s.name || 'Student') + '</td>' +
+          '<td class="text-tertiary">—</td>' +
+          '<td>' + UI.badge('Not attempted', 'neutral') + '</td>' +
+          '<td class="text-tertiary">—</td></tr>';
+      }
+      return '<tr><td style="font-weight:500;">' + F.esc(b.name) + '</td>' +
+        '<td>' + b.score + ' / ' + b.total + '</td>' +
+        '<td>' + passBadge(b.pct >= 40) + '</td>' +
+        '<td class="text-tertiary">' + F.esc(b.date ? String(b.date).slice(0, 10) : '—') + '</td></tr>';
+    }).join('');
+    LH.modal.open(
+      '<div class="table-wrapper" style="max-height:380px;overflow:auto;border:1px solid var(--color-border-light);border-radius:10px;"><table class="table">' +
+      '<thead><tr><th>Student</th><th>Best score</th><th>Result</th><th>Date</th></tr></thead><tbody>' +
+      (rows || '<tr><td colspan="4" class="text-tertiary">No enrolled students.</td></tr>') +
+      '</tbody></table></div>',
+      { title: 'Final attempts — ' + (f.title || ''), width: '640px' });
+  }
+
   async function render() {
     var el = $('#report-cards');
     if (!el) return;
@@ -64,12 +113,13 @@
         '<div class="card-header"><h2 class="card-title">Final exams</h2><p class="card-subtitle">Per-course final tests — attempts, average best score, 40% pass split</p></div>' +
         '<div class="card-body" style="padding-top:var(--spacing-4);">' +
           (((r.finalExams && r.finalExams.length) ? r.finalExams.map(function (f) {
-            return '<div style="margin-bottom:14px;"><div class="flex items-center justify-between" style="margin-bottom:4px;gap:12px;">' +
+            return '<div class="final-row" data-final-row="' + F.esc(f.quizId || '') + '" data-final-course="' + F.esc(f.courseId || '') + '" role="button" tabindex="0" style="margin-bottom:14px;cursor:pointer;padding:10px 12px;margin-left:-12px;margin-right:-12px;" title="View student attempts">' + '<div class="flex items-center justify-between" style="margin-bottom:4px;gap:12px;">' +
               '<span style="font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + F.esc(f.code + ' — ' + f.title) + '</span>' +
               '<span style="font-size:12px;color:var(--color-text-tertiary);white-space:nowrap;">' + F.n(f.attempts) + ' attempts &middot; ' + f.averagePct + '% avg</span></div>' +
               '<div style="display:flex;align-items:center;gap:10px;">' + UI.progress(Math.round(f.averagePct)) +
               '<span style="font-size:12px;font-weight:600;white-space:nowrap;color:var(--color-success);">' + F.n(f.passed) + ' passed</span>' +
               '<span style="font-size:12px;font-weight:600;white-space:nowrap;color:var(--color-danger);">' + F.n(f.failed) + ' failed</span></div>' +
+              '<div class="final-hint" style="font-size:11px;color:var(--color-primary);margin-top:4px;">Click to view student attempts</div>' +
             '</div>';
           }).join('') : '<p style="font-size:13px;color:var(--color-text-tertiary);">No final tests created yet.</p>')) +
         '</div>' +
@@ -90,10 +140,28 @@
           '</div>' +
         '</div>' +
       '</section>';
+    return r.finalExams || [];
   }
 
   function init() {
-    render();
+    var el = $('#report-cards');
+    render().then(function (finals) {
+      if (!finals || !finals.length || !el) return;
+      el.addEventListener('click', function (e) {
+        var row = e.target.closest('[data-final-row]');
+        if (!row) return;
+        var f = finals.filter(function (x) { return x.quizId === row.getAttribute('data-final-row'); })[0];
+        if (f) openFinalAttempts(f);
+      });
+      el.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var row = e.target.closest('[data-final-row]');
+        if (!row) return;
+        e.preventDefault();
+        var f = finals.filter(function (x) { return x.quizId === row.getAttribute('data-final-row'); })[0];
+        if (f) openFinalAttempts(f);
+      });
+    });
   }
 
   LH.app.register('admin-reports', init);

@@ -41,7 +41,7 @@
 
   /* Bump on every frontend JS change so browsers never run stale code
      (stale api/index.js = wrong backend mode = phantom "not found"). */
-  var CACHE_BUST = '20261016c';
+  var CACHE_BUST = '20261017a';
 
   for (var i = 0; i < files.length; i++) {
     document.write('<script type="text/javascript" src="' + pageBase + files[i] + '?v=' + CACHE_BUST + '"><\/script>');
